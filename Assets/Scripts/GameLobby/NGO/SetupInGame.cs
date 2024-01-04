@@ -6,6 +6,7 @@ using Unity.Networking.Transport;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace LobbyRelaySample.ngo
 {
@@ -37,6 +38,7 @@ namespace LobbyRelaySample.ngo
         /// The prefab with the NetworkManager contains all of the assets and logic needed to set up the NGO minigame.
         /// The UnityTransport needs to also be set up with a new Allocation from Relay.
         /// </summary>
+        /*
         async Task CreateNetworkManager(LocalLobby localLobby, LocalPlayer localPlayer)
         {
             m_lobby = localLobby;
@@ -52,6 +54,34 @@ namespace LobbyRelaySample.ngo
             {
                 await AwaitRelayCode(localLobby);
                 await SetRelayClientData();
+                NetworkManager.Singleton.StartClient();
+            }
+        }
+        */
+        
+        async Task CreateNetworkManager(LocalLobby localLobby, LocalPlayer localPlayer)
+        {
+            m_lobby = localLobby;
+
+            // Make sure you've set the correct scene name
+            string gameSceneName = "DemoScene";
+
+            // Wait for the relay code to be set
+            await AwaitRelayCode(localLobby);
+
+            if (localPlayer.IsHost.Value)
+            {
+                await SetRelayHostData();
+
+                // Load the game scene and start as host
+                NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
+                NetworkManager.Singleton.StartHost();
+            }
+            else
+            {
+                await SetRelayClientData();
+
+                // Wait for the host to change the scene, then start as client
                 NetworkManager.Singleton.StartClient();
             }
         }
