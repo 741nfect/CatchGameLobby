@@ -10,9 +10,8 @@ namespace LobbyRelaySample.ngo
     /// Once the NetworkManager has been spawned, we need something to manage the game state and setup other in-game objects
     /// that is itself a networked object, to track things like network connect events.
     /// </summary>
-    public class InGameRunner : NetworkBehaviour
+    public class InGameRunnerOld : NetworkBehaviour
     {
-        /*
         [SerializeField]
         private PlayerCursor m_playerCursorPrefab = default;
         [SerializeField]
@@ -31,7 +30,6 @@ namespace LobbyRelaySample.ngo
         private NetworkedDataStore m_dataStore = default;
         [SerializeField]
         private BoxCollider m_collider;
-        */
 
         public Action onGameBeginning;
         Action m_onConnectionVerified, m_onGameEnd;
@@ -87,10 +85,21 @@ namespace LobbyRelaySample.ngo
 
         private void FinishInitialize()
         {
-            
+            m_symbolContainerInstance = Instantiate(m_symbolContainerPrefab);
+            m_symbolContainerInstance.NetworkObject.Spawn();
+            ResetPendingSymbolPositions();
+            m_killVolume.Initialize(OnSymbolDeactivated);
         }
 
-
+        private void ResetPendingSymbolPositions()
+        {
+            m_pendingSymbolPositions.Clear();
+            Rect boxRext = new Rect(m_collider.bounds.min.x, m_collider.bounds.min.y, m_collider.bounds.size.x,
+                m_collider.bounds.size.y);
+            IList<Vector2> points = m_sequenceSelector.GenerateRandomSpawnPoints(boxRext, 2);
+            foreach (Vector2 point in points)
+                m_pendingSymbolPositions.Enqueue(point);
+        }
 
         /// <summary>
         /// To verify the connection, invoke a server RPC call that then invokes a client RPC call. After this, the actual setup occurs.
@@ -119,10 +128,10 @@ namespace LobbyRelaySample.ngo
         private void VerifyConnectionConfirm_ServerRpc(PlayerData clientData)
         {
             // Note that the client will not receive the cursor object reference, so the cursor must handle initializing itself.
-            //PlayerCursor playerCursor = Instantiate(m_playerCursorPrefab);
-            //playerCursor.NetworkObject.SpawnWithOwnership(clientData.id);
-            //playerCursor.name += clientData.name;
-            //m_dataStore.AddPlayer(clientData.id, clientData.name);
+            PlayerCursor playerCursor = Instantiate(m_playerCursorPrefab);
+            playerCursor.NetworkObject.SpawnWithOwnership(clientData.id);
+            playerCursor.name += clientData.name;
+            m_dataStore.AddPlayer(clientData.id, clientData.name);
             // The game will begin at this point, or else there's a timeout for booting any unconnected players.
             bool areAllPlayersConnected = NetworkManager.Singleton.ConnectedClients.Count >= m_expectedPlayerCount;
             VerifyConnectionConfirm_ClientRpc(clientData.id, areAllPlayersConnected);
@@ -152,20 +161,80 @@ namespace LobbyRelaySample.ngo
             m_canSpawnInGameObjects = true;
             GameManager.Instance.BeginGame();
             onGameBeginning?.Invoke();
-            //m_introOutroRunner.DoIntro(StartMovingSymbols);
+            m_introOutroRunner.DoIntro(StartMovingSymbols);
         }
 
-
+        void StartMovingSymbols()
+        {
+            m_sequenceSelector.SetTargetsAnimatable();
+            if(IsHost)
+                m_symbolContainerInstance.StartMovingSymbols(); //TODO fix this for
+        }
 
         public void Update()
         {
-            
+            CheckIfCanSpawnNewSymbol();
+            if (m_timeout >= 0)
+            {
+                m_timeout -= Time.deltaTime;
+                if (m_timeout < 0)
+                    BeginGame();
+            }
 
+            void CheckIfCanSpawnNewSymbol()
+            {
+                if (!m_canSpawnInGameObjects.GetValueOrDefault() ||
+                    m_remainingSymbolCount >= SequenceSelector.symbolCount || !IsHost)
+                    return;
+                if (m_pendingSymbolPositions.Count > 0)
+                {
+                    m_symbolSpawnTimer -= Time.deltaTime;
+                    if (m_symbolSpawnTimer < 0)
+                    {
+                        m_symbolSpawnTimer = 0.02f; // Space out the object spawning a little to prevent a lag spike.
+                        SpawnNewSymbol();
+                        if (m_remainingSymbolCount >= SequenceSelector.symbolCount)
+                            m_canSpawnInGameObjects = false;
+                    }
+                }
+            }
 
+            void SpawnNewSymbol()
+            {
+                int index = SequenceSelector.symbolCount - m_pendingSymbolPositions.Count;
+                Vector3 pendingPos = m_pendingSymbolPositions.Dequeue();
+                var symbolObj = Instantiate(m_symbolObjectPrefab);
+                symbolObj.NetworkObject.Spawn();
+                symbolObj.name = "Symbol" + index;
+                symbolObj.SetParentAndPosition_Server(m_symbolContainerInstance.NetworkObject, pendingPos);
+                symbolObj.SetSymbolIndex_Server(m_sequenceSelector.GetNextSymbol(index));
+                m_remainingSymbolCount++;
+            }
         }
 
+        /// <summary>
+        /// Called while on the host to determine if incoming input has scored or not.
+        /// </summary>
+        public void OnPlayerInput(ulong playerId, SymbolObject selectedSymbol)
+        {
+            if (selectedSymbol.Clicked)
+                return;
 
+            if (m_sequenceSelector.ConfirmSymbolCorrect(playerId, selectedSymbol.SymbolIndex))
+            {
+                selectedSymbol.ClickedSequence_ServerRpc(playerId);
+                m_scorer.ScoreSuccess(playerId);
+                OnSymbolDeactivated();
+            }
+            else
+                m_scorer.ScoreFailure(playerId);
+        }
 
+        void OnSymbolDeactivated()
+        {
+            if (--m_remainingSymbolCount <= 0)
+                WaitForEndingSequence_ClientRpc();
+        }
 
         /// <summary>
         /// The server determines when the game should end. Once it does, it needs to inform the clients to clean up their networked objects first,
@@ -174,6 +243,8 @@ namespace LobbyRelaySample.ngo
         [ClientRpc]
         private void WaitForEndingSequence_ClientRpc()
         {
+            m_scorer.OnGameEnd();
+            m_introOutroRunner.DoOutro(EndGame);
         }
 
         private void EndGame()

@@ -251,7 +251,9 @@ namespace LobbyRelaySample
         {
             m_LocalUser.UserStatus.Value = PlayerStatus.InGame;
             m_LocalLobby.LocalLobbyState.Value = LobbyState.InGame;
+            Debug.Log("Countdown Finished.");
             m_setupInGame.StartNetworkedGame(m_LocalLobby, m_LocalUser);
+            Debug.Log("Game Started.");
         }
 
         public void BeginGame()
@@ -286,6 +288,8 @@ namespace LobbyRelaySample
 
         async void Awake()
         {
+            DontDestroyOnLoad(this.gameObject);
+
             Application.wantsToQuit += OnWantToQuit;
             m_LocalUser = new LocalPlayer("", 0, false, "LocalPlayer");
             m_LocalLobby = new LocalLobby { LocalLobbyState = { Value = LobbyState.Lobby } };

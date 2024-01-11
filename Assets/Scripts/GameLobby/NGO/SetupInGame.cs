@@ -41,6 +41,7 @@ namespace LobbyRelaySample.ngo
         /*
         async Task CreateNetworkManager(LocalLobby localLobby, LocalPlayer localPlayer)
         {
+            Debug.Log("CreateNetworkManager1");
             m_lobby = localLobby;
             m_inGameRunner = Instantiate(m_IngameRunnerPrefab).GetComponentInChildren<InGameRunner>();
             m_inGameRunner.Initialize(OnConnectionVerified, m_lobby.PlayerCount, OnGameBegin, OnGameEnd,
@@ -61,30 +62,81 @@ namespace LobbyRelaySample.ngo
         
         async Task CreateNetworkManager(LocalLobby localLobby, LocalPlayer localPlayer)
         {
+            Debug.Log("CreateNetworkManager1");
+            m_lobby = localLobby;
+            //m_inGameRunner = Instantiate(m_IngameRunnerPrefab).GetComponentInChildren<InGameRunner>();
+            //find the 'DemoScene' and in InGameRunner child and instantiate it
+            //find the scene named DemoScene
+            //NetworkManager.Singleton.SceneManager.LoadScene("DemoScene", LoadSceneMode.Single);
+            
+            // Load the scene asynchronously and wait for it to complete
+            AsyncOperation loadSceneOp = SceneManager.LoadSceneAsync("DemoScene", LoadSceneMode.Single);
+            while (!loadSceneOp.isDone)
+            {
+                await Task.Delay(100); // Wait 100ms then check again
+            }
+
+            
+            //in the new scene, find the InGameRunner child and instantiate it
+            GameObject inGameRunner = GameObject.Find("InGameRunner");
+            Debug.Log("m_inGameRunner: " + m_inGameRunner);
+            m_inGameRunner.Initialize(OnConnectionVerified, m_lobby.PlayerCount, OnGameBegin, OnGameEnd,
+                localPlayer);
+            Debug.Log("m_inGameRunner.Initialize end");
+
+
+            
+            
+            if (localPlayer.IsHost.Value)
+            {
+                await SetRelayHostData();
+                NetworkManager.Singleton.StartHost();
+            }
+            else
+            {
+                await AwaitRelayCode(localLobby);
+                await SetRelayClientData();
+                NetworkManager.Singleton.StartClient();
+            }
+        }
+        
+        
+        /*
+        async Task CreateNetworkManager(LocalLobby localLobby, LocalPlayer localPlayer)
+        {
+            Debug.Log("CreateNetworkManager2");
             m_lobby = localLobby;
 
             // Make sure you've set the correct scene name
             string gameSceneName = "DemoScene";
 
             // Wait for the relay code to be set
-            await AwaitRelayCode(localLobby);
-
+            
+            //log the relay code
+            Debug.Log("relay code: ");
             if (localPlayer.IsHost.Value)
             {
+                Debug.Log("IsHost");
                 await SetRelayHostData();
-
+                Debug.Log("SetRelayHostData end");
                 // Load the game scene and start as host
                 NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
+                Debug.Log("LoadScene end");
                 NetworkManager.Singleton.StartHost();
+                Debug.Log("StartHost end");
             }
             else
             {
+                Debug.Log("IsClient");
+                await AwaitRelayCode(localLobby);
                 await SetRelayClientData();
 
                 // Wait for the host to change the scene, then start as client
                 NetworkManager.Singleton.StartClient();
             }
+            Debug.Log("CreateNetworkManager2 end");
         }
+        */
 
         async Task AwaitRelayCode(LocalLobby lobby)
         {
@@ -92,6 +144,7 @@ namespace LobbyRelaySample.ngo
             lobby.RelayCode.onChanged += (code) => relayCode = code;
             while (string.IsNullOrEmpty(relayCode))
             {
+                Debug.Log("AwaitRelayCode");
                 await Task.Delay(100);
             }
         }
@@ -162,6 +215,7 @@ namespace LobbyRelaySample.ngo
 
         public void StartNetworkedGame(LocalLobby localLobby, LocalPlayer localPlayer)
         {
+            Debug.Log("StartNetworkedGame");
             m_doesNeedCleanup = true;
             SetMenuVisibility(false);
 #pragma warning disable 4014

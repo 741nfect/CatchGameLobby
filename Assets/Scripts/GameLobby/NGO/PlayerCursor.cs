@@ -96,7 +96,8 @@ namespace LobbyRelaySample.ngo
             if (m_currentlyCollidingSymbols.Count > 0)
             {
                 SymbolObject symbol = m_currentlyCollidingSymbols[0];
-                InGameRunner.Instance.OnPlayerInput(id, symbol);
+                //Commented out cause of the pruning of the inGameRunner.cs
+                //InGameRunner.Instance.OnPlayerInput(id, symbol);
             }
 
             OnInputVisuals_ClientRpc();
