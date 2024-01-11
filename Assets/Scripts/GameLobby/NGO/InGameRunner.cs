@@ -45,9 +45,10 @@ namespace LobbyRelaySample.ngo
         private bool m_hasConnected = false;
 
         [SerializeField]
-        private SymbolContainer m_symbolContainerInstance;
         private PlayerData
             m_localUserData; // This has an ID that's not necessarily the OwnerClientId, since all clients will see all spawned objects regardless of ownership.
+        
+        public GameObject playerPrefab; // Assign the player prefab in the inspector
 
         public static InGameRunner Instance
         {
@@ -108,6 +109,7 @@ namespace LobbyRelaySample.ngo
         [ClientRpc]
         private void VerifyConnection_ClientRpc(ulong clientId)
         {
+            Debug.Log("VerifyConnection_ClientRpc");
             if (clientId == m_localUserData.id)
                 VerifyConnectionConfirm_ServerRpc(m_localUserData);
         }
@@ -118,6 +120,7 @@ namespace LobbyRelaySample.ngo
         [ServerRpc(RequireOwnership = false)]
         private void VerifyConnectionConfirm_ServerRpc(PlayerData clientData)
         {
+            Debug.Log("VerifyConnectionConfirm_ServerRpc");
             // Note that the client will not receive the cursor object reference, so the cursor must handle initializing itself.
             //PlayerCursor playerCursor = Instantiate(m_playerCursorPrefab);
             //playerCursor.NetworkObject.SpawnWithOwnership(clientData.id);
@@ -131,6 +134,7 @@ namespace LobbyRelaySample.ngo
         [ClientRpc]
         private void VerifyConnectionConfirm_ClientRpc(ulong clientId, bool canBeginGame)
         {
+            Debug.Log("VerifyConnectionConfirm_ClientRpc");
             if (clientId == m_localUserData.id)
             {
                 m_onConnectionVerified?.Invoke();
@@ -149,10 +153,43 @@ namespace LobbyRelaySample.ngo
         /// </summary>
         void BeginGame()
         {
+            /*
             m_canSpawnInGameObjects = true;
             GameManager.Instance.BeginGame();
             onGameBeginning?.Invoke();
             //m_introOutroRunner.DoIntro(StartMovingSymbols);
+            */
+            Debug.Log("BeginGame1");
+            if (IsServer)
+            {
+                Debug.Log("BeginGame2");
+                foreach (var client in NetworkManager.Singleton.ConnectedClients)
+                {
+                    SpawnPlayerForClient(client.Key);
+                }
+                m_canSpawnInGameObjects = true;
+                GameManager.Instance.BeginGame();
+                onGameBeginning?.Invoke();
+            }
+        }
+        
+        
+        private void SpawnPlayerForClient(ulong clientId)
+        {
+            GameObject playerInstance = Instantiate(playerPrefab);
+            playerInstance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void DespawnPlayerServerRpc(ulong clientId)
+        {
+            if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var networkClient))
+            {
+                if (networkClient.PlayerObject != null)
+                {
+                    networkClient.PlayerObject.Despawn();
+                }
+            }
         }
 
 
@@ -169,7 +206,7 @@ namespace LobbyRelaySample.ngo
 
         /// <summary>
         /// The server determines when the game should end. Once it does, it needs to inform the clients to clean up their networked objects first,
-        /// since disconnecting before that happens will prevent them from doing so (since they can't receive despawn events from the disconnected server).
+        /// since disconnecting before that happens will prevent thm from doing so (since they can't receive despeawn events from the disconnected server).
         /// </summary>
         [ClientRpc]
         private void WaitForEndingSequence_ClientRpc()

@@ -75,13 +75,21 @@ namespace LobbyRelaySample.ngo
             {
                 await Task.Delay(100); // Wait 100ms then check again
             }
+            Debug.Log("loadSceneOp.isDone");
 
             
             //in the new scene, find the InGameRunner child and instantiate it
             GameObject inGameRunner = GameObject.Find("InGameRunner");
+            //Debug.Log("m_inGameRunner: " + m_inGameRunner);
+            Debug.Log("inGameRunner: " + inGameRunner);
+            //in inGameRunner object there is a script called inGameRunner and we need to get it
+            m_inGameRunner = inGameRunner.GetComponentInChildren<InGameRunner>();
             Debug.Log("m_inGameRunner: " + m_inGameRunner);
+            //and initialize it
+            
             m_inGameRunner.Initialize(OnConnectionVerified, m_lobby.PlayerCount, OnGameBegin, OnGameEnd,
                 localPlayer);
+                
             Debug.Log("m_inGameRunner.Initialize end");
 
 

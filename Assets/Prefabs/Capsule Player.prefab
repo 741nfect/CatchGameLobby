@@ -5072,6 +5072,7 @@ GameObject:
   - component: {fileID: 8543656502858838044}
   - component: {fileID: 8543656502858838034}
   - component: {fileID: 8543656502858838035}
+  - component: {fileID: 2377916065244920505}
   m_Layer: 0
   m_Name: Camera
   m_TagString: MainCamera
@@ -5145,6 +5146,39 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8543656502858838045}
   m_Enabled: 1
+--- !u!114 &2377916065244920505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8543656502858838045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_Version: 2
 --- !u!1 &8543656503419996574
 GameObject:
   m_ObjectHideFlags: 0
@@ -5155,12 +5189,10 @@ GameObject:
   m_Component:
   - component: {fileID: 8543656503419996562}
   - component: {fileID: 8543656503419996563}
+  - component: {fileID: -5323389353299203131}
   - component: {fileID: 8543656503419996572}
-  - component: {fileID: 8791173669606423861}
-  - component: {fileID: 7082156500314728414}
-  - component: {fileID: 502061782485785804}
   - component: {fileID: 4994248420955917391}
-  - component: {fileID: 7187858341059044949}
+  - component: {fileID: 5082772414481999224}
   m_Layer: 0
   m_Name: Capsule Player
   m_TagString: Untagged
@@ -5194,6 +5226,19 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8543656503419996574}
   m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &-5323389353299203131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8543656503419996574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b00e37eb9d94dad935d60ccc6f6f3c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementSpeed: 5
 --- !u!23 &8543656503419996572
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5236,95 +5281,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &8791173669606423861
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8543656503419996574}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sceneId: 0
-  serverOnly: 0
-  visible: 0
-  m_AssetId: 298b8436dbee64002b3da0b61cf9fc09
-  hasSpawned: 0
---- !u!114 &7082156500314728414
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8543656503419996574}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncMode: 0
-  syncInterval: 0.1
-  clientAuthority: 1
-  sendInterval: 0.05
-  syncPosition: 1
-  syncRotation: 1
-  syncScale: 0
-  interpolatePosition: 1
-  interpolateRotation: 1
-  interpolateScale: 0
-  bufferTimeMultiplier: 1
-  bufferSizeLimit: 64
-  catchupThreshold: 4
-  catchupMultiplier: 0.1
-  onlySyncOnChange: 1
-  bufferResetMultiplier: 5
-  positionSensitivity: 0.01
-  rotationSensitivity: 0.01
-  scaleSensitivity: 0.01
-  showGizmos: 0
-  showOverlay: 0
-  overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
---- !u!114 &502061782485785804
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8543656503419996574}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b00e37eb9d94dad935d60ccc6f6f3c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncMode: 0
-  syncInterval: 0.1
-  sessionId: 
-  username: 
-  ip: 
-  platform: 
-  walkingSpeed: 7.5
-  runningSpeed: 11.5
-  jumpSpeed: 8
-  gravity: 20
-  playerCamera: {fileID: 8543656502858838034}
-  audioListener: {fileID: 8543656502858838035}
-  lookSpeed: 2
-  lookXLimit: 45
-  canMove: 1
-  catcherColor: {r: 1, g: 0, b: 0, a: 1}
-  runnerColor: {r: 0, g: 1, b: 0.06069064, a: 1}
-  hostageColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  playerRole: 0
-  maxStamina: 5
-  sprintDrainRate: 1
-  sprintRefillRate: 0.5
-  staminaPenaltyRate: 0.03
-  staminaRegenerationRate: 0.003
-  sprintTimeSlider: {fileID: 488907066180357090}
-  staminaSlider: {fileID: 653080764067187573}
 --- !u!143 &4994248420955917391
 CharacterController:
   m_ObjectHideFlags: 0
@@ -5343,7 +5299,7 @@ CharacterController:
   m_SkinWidth: 0.0001
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &7187858341059044949
+--- !u!114 &5082772414481999224
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -5352,27 +5308,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 8543656503419996574}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 378d554f0776d46ecbcb182f04ad9fd5, type: 3}
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player: {fileID: 502061782485785804}
-  hostControlPanel: {fileID: 4572210135463488237}
-  walkingSpeedSlider: {fileID: 4756442417815427402}
-  walkingSpeedText: {fileID: 8185383519636589066}
-  runningSpeedSlider: {fileID: 918970804974013207}
-  runningSpeedText: {fileID: 6410261664000860318}
-  jumpSpeedSlider: {fileID: 590254107032592085}
-  jumpSpeedText: {fileID: 5102133928938258635}
-  maxStaminaSlider: {fileID: 4362782499169649226}
-  maxStaminaText: {fileID: 3277638065560433414}
-  sprintDrainRateSlider: {fileID: 7249642906282096810}
-  sprintDrainRateText: {fileID: 2106296854238565915}
-  sprintRefillRateSlider: {fileID: 1610708056845344731}
-  sprintRefillRateText: {fileID: 8905195963245680049}
-  staminaPenaltyRateSlider: {fileID: 4681564703107861250}
-  staminaPenaltyRateText: {fileID: 5706211713270744597}
-  staminaRegenerationRateSlider: {fileID: 1769237789857890537}
-  staminaRegenerationRateText: {fileID: 6395299591851226566}
+  GlobalObjectIdHash: 951099334
+  AlwaysReplicateAsRoot: 0
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &8795910888078291532
 GameObject:
   m_ObjectHideFlags: 0

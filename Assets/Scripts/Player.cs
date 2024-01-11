@@ -636,3 +636,51 @@ public class Player : NetworkBehaviour
     
 }
 */
+
+
+using UnityEngine;
+using Unity.Netcode;
+
+public class Player : NetworkBehaviour
+{
+    public float movementSpeed = 5.0f;
+    private CharacterController characterController;
+    private Transform cameraTransform;
+
+    private void Start()
+    {
+        characterController = GetComponent<CharacterController>();
+
+        // Ensure the camera is only enabled for the local player
+        if (IsLocalPlayer)
+        {
+            cameraTransform = Camera.main.transform;
+            Camera.main.transform.SetParent(transform);
+            Camera.main.transform.localPosition = new Vector3(0, 1, 0); // Adjust camera position relative to the player
+        }
+        else
+        {
+            // Disable components not needed for remote players
+            GetComponentInChildren<Camera>().enabled = false;
+        }
+    }
+
+    private void Update()
+    {
+        if (IsLocalPlayer)
+        {
+            MovePlayer();
+        }
+        // Additional player actions can be added here
+    }
+
+    private void MovePlayer()
+    {
+        Vector3 forwardMovement = cameraTransform.forward * Input.GetAxis("Vertical");
+        Vector3 rightMovement = cameraTransform.right * Input.GetAxis("Horizontal");
+
+        characterController.SimpleMove(Vector3.ClampMagnitude(forwardMovement + rightMovement, 1.0f) * movementSpeed);
+    }
+
+    // Other methods related to gameplay, like tagging, can be added here
+}
