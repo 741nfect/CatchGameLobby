@@ -5189,10 +5189,12 @@ GameObject:
   m_Component:
   - component: {fileID: 8543656503419996562}
   - component: {fileID: 8543656503419996563}
+  - component: {fileID: 5082772414481999224}
   - component: {fileID: -5323389353299203131}
   - component: {fileID: 8543656503419996572}
   - component: {fileID: 4994248420955917391}
-  - component: {fileID: 5082772414481999224}
+  - component: {fileID: -6230274085429106687}
+  - component: {fileID: -2349587686413057090}
   m_Layer: 0
   m_Name: Capsule Player
   m_TagString: Untagged
@@ -5226,6 +5228,26 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8543656503419996574}
   m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &5082772414481999224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8543656503419996574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 1119012109
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &-5323389353299203131
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5239,6 +5261,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   movementSpeed: 5
+  playerCamera: {fileID: 8543656502858838034}
+  walkingSpeed:
+    m_InternalValue: 7.5
+  runningSpeed:
+    m_InternalValue: 11.5
+  jumpSpeed:
+    m_InternalValue: 8
+  gravity:
+    m_InternalValue: 20
+  lookSpeed:
+    m_InternalValue: 2
+  lookXLimit:
+    m_InternalValue: 45
+  canMove: 1
+  maxStamina: 5
+  sprintDrainRate:
+    m_InternalValue: 1
+  sprintRefillRate:
+    m_InternalValue: 0.5
+  staminaPenaltyRate:
+    m_InternalValue: 0.03
+  staminaRegenerationRate:
+    m_InternalValue: 0.003
 --- !u!23 &8543656503419996572
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5299,7 +5344,27 @@ CharacterController:
   m_SkinWidth: 0.0001
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5082772414481999224
+--- !u!95 &-6230274085429106687
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8543656503419996574}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+--- !u!114 &-2349587686413057090
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -5308,13 +5373,27 @@ MonoBehaviour:
   m_GameObject: {fileID: 8543656503419996574}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Script: {fileID: 11500000, guid: df2868252ab5c4d1da357e8f11f1b524, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 951099334
-  AlwaysReplicateAsRoot: 0
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 0
+  SyncRotAngleY: 0
+  SyncRotAngleZ: 0
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  Interpolate: 1
+  SlerpPosition: 0
 --- !u!1 &8795910888078291532
 GameObject:
   m_ObjectHideFlags: 0

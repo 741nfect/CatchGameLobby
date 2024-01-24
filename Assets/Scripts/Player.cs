@@ -1,4 +1,285 @@
-﻿//using Mirror;
+﻿
+using Unity.Multiplayer.Samples.Utilities.ClientAuthority;
+using UnityEngine;
+using Unity.Netcode;
+using UnityEngine.EventSystems;
+
+public class Player : NetworkBehaviour
+{
+    public float movementSpeed = 5.0f;
+    private CharacterController characterController;
+
+    public Camera playerCamera;
+    
+    private ClientNetworkTransform clientNetworkTransform;
+    
+    private Transform[] spawnPoints;
+    
+
+    Vector3 moveDirection = Vector3.zero;
+    float rotationX = 0;
+
+    [Header("Movement")]
+    public NetworkVariable<float> walkingSpeed = new NetworkVariable<float>(7.5f);
+    public NetworkVariable<float> runningSpeed = new NetworkVariable<float>(11.5f);
+    public NetworkVariable<float> jumpSpeed = new NetworkVariable<float>(8.0f);
+    public NetworkVariable<float> gravity = new NetworkVariable<float>(20.0f);
+    public NetworkVariable<float> lookSpeed = new NetworkVariable<float>(2.0f);
+    public NetworkVariable<float> lookXLimit = new NetworkVariable<float>(45.0f);
+    
+    [HideInInspector]
+    public bool canMove = true;
+    private bool canControl = true;
+    
+    
+    [Header("Sprint System")]
+    public float maxStamina;
+    public NetworkVariable<float> sprintDrainRate = new NetworkVariable<float>();
+    public NetworkVariable<float> sprintRefillRate = new NetworkVariable<float>();
+    public NetworkVariable<float> staminaPenaltyRate = new NetworkVariable<float>();
+    public NetworkVariable<float> staminaRegenerationRate = new NetworkVariable<float>();
+    private float currentSprintTime; // Current available sprint time
+    private float currentStamina; // Current total stamina capacity
+
+    
+    
+    
+
+
+    public override void OnNetworkSpawn()
+    {
+        characterController = GetComponent<CharacterController>();
+        clientNetworkTransform = GetComponent<ClientNetworkTransform>();
+        // Ensure the camera is only enabled for the local player
+        Debug.Log("OnNetworkSpawn");
+        if (IsLocalPlayer)
+        {
+            //log the ownerclientid
+            Debug.Log("OwnerClientId: " + OwnerClientId);
+            PopulateSpawnPoints();
+            
+            Debug.Log("Player has been spawned on the client!");
+            //disable the character controller for the local player
+            
+            
+            //cameraTransform = Camera.main.transform;
+            playerCamera = GetComponentInChildren<Camera>();
+            Camera.main.transform.SetParent(transform);
+            Camera.main.transform.localPosition = new Vector3(0, 1, 0); // Adjust camera position relative to the player
+            
+            
+            
+            int spawnIndex = (int)(OwnerClientId % (ulong)spawnPoints.Length);           
+            //SpawnPlayerInSpawnPointServerRpc(0);
+            characterController.enabled = false;
+            clientNetworkTransform.transform.position = spawnPoints[spawnIndex].position;
+
+            characterController.enabled = true;
+            
+            
+            TogglePlayerControl(true);
+            
+            
+            // Initialize sprint and stamina variables
+            currentSprintTime = maxStamina;
+            currentStamina = maxStamina;
+        
+
+            
+            
+
+            
+        }
+        else
+        {
+            // Disable components not needed for remote players
+            GetComponentInChildren<Camera>().enabled = false;
+            GetComponentInChildren<AudioListener>().enabled = false;
+        }
+   
+    }
+    
+    
+
+    
+    
+    
+    private void PopulateSpawnPoints()
+    {
+        GameObject[] spawnPointObjects = GameObject.FindGameObjectsWithTag("SpawnPoint");
+
+        if (spawnPointObjects.Length == 0)
+        {
+            Debug.LogError("No game objects found with tag 'SpawnPoint'!");
+            return;
+        }
+
+        // If you need Transforms, extract them from the GameObjects
+        spawnPoints = new Transform[spawnPointObjects.Length];
+
+        for (int i = 0; i < spawnPointObjects.Length; i++)
+        {
+            Debug.Log("Spawn point " + i + " found at " + spawnPointObjects[i].transform.position);
+            spawnPoints[i] = spawnPointObjects[i].transform;
+        }
+    }
+    
+    
+    
+    private void Update()
+    {
+
+        if (!IsOwner)
+        {
+            return;
+        }
+
+        
+            //MovePlayer();
+            
+            
+            // Handling cursor locking and visibility toggle
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                TogglePlayerControl(false);
+            }
+            
+            // Handling relocking the cursor with a mouse click
+            if (!canControl && Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject()) { // Mouse click to relock
+                TogglePlayerControl(true);
+            }
+
+            if (canControl)
+            {
+
+                // We are grounded, so recalculate move direction based on axes
+                Vector3 forward = transform.TransformDirection(Vector3.forward);
+                Vector3 right = transform.TransformDirection(Vector3.right);
+                // Press Left Shift to run
+                // Determine if the player is trying to sprint and has the resources to do so
+                bool isTryingToSprint = Input.GetKey(KeyCode.LeftShift);
+                bool canSprint = isTryingToSprint && currentSprintTime > 0 && currentStamina > 0;
+
+                // Determine the target speed based on whether the player is sprinting or walking
+                float targetSpeed = canSprint ? runningSpeed.Value : walkingSpeed.Value;
+
+                // Apply the target speed to movement calculations
+                float curSpeedX = canMove ? targetSpeed * Input.GetAxis("Vertical") : 0;
+                float curSpeedY = canMove ? targetSpeed * Input.GetAxis("Horizontal") : 0;
+                
+                float movementDirectionY = moveDirection.y;
+                moveDirection = (forward * curSpeedX) + (right * curSpeedY);
+
+                if (Input.GetButton("Jump") && canMove && characterController.isGrounded)
+                {
+                    moveDirection.y = jumpSpeed.Value;
+                }
+                else
+                {
+                    moveDirection.y = movementDirectionY;
+                }
+
+                // Apply gravity. Gravity is multiplied by deltaTime twice (once here, and once below
+                // when the moveDirection is multiplied by deltaTime). This is because gravity should be applied
+                // as an acceleration (ms^-2)
+                if (!characterController.isGrounded)
+                {
+                    moveDirection.y -= gravity.Value * Time.deltaTime;
+                }
+
+                // Move the controller
+                characterController.Move(moveDirection * Time.deltaTime);
+
+                // Player and Camera rotation
+                if (canMove)
+                {
+                    rotationX += -Input.GetAxis("Mouse Y") * lookSpeed.Value;
+                    rotationX = Mathf.Clamp(rotationX, -lookXLimit.Value, lookXLimit.Value);
+                    playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
+                    transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed.Value, 0);
+                }
+
+                /*
+                // Listen for role assignment
+                if (Input.GetKeyDown(KeyCode.Alpha1))
+                {
+                    CmdAssignRole(PlayerRole.Catcher);
+                }
+                else if (Input.GetKeyDown(KeyCode.Alpha2))
+                {
+                    CmdAssignRole(PlayerRole.Runner);
+                }
+                else if (Input.GetKeyDown(KeyCode.Alpha3))
+                {
+                    CmdAssignRole(PlayerRole.Hostage);
+                }
+                */
+                
+                
+                // Sprinting Input
+                if (canSprint)
+                {
+                    /// Drain sprint time and apply continuous stamina penalty
+                    currentSprintTime -= Time.deltaTime * sprintDrainRate.Value;
+                    currentStamina -= Time.deltaTime * staminaPenaltyRate.Value;
+
+                    // Ensure sprint time and stamina don't go below zero
+                    currentSprintTime = Mathf.Max(currentSprintTime, 0);
+                    currentStamina = Mathf.Max(currentStamina, 0);
+                }
+                else
+                {
+                    // Refill sprint time and stamina when not sprinting
+                    if (!isTryingToSprint && currentSprintTime < currentStamina)
+                    {
+                        currentSprintTime += Time.deltaTime * sprintRefillRate.Value;
+                    }
+
+                    if (currentStamina < maxStamina)
+                    {
+                        currentStamina += Time.deltaTime * staminaRegenerationRate.Value;
+                    }
+
+                }
+
+                // Cap sprint time and stamina at their max values
+                currentSprintTime = Mathf.Min(currentSprintTime, currentStamina);
+                currentStamina = Mathf.Min(currentStamina, maxStamina);
+                
+                /*
+                sprintTimeSlider.value = currentSprintTime;
+                staminaSlider.value = currentStamina;
+                */
+            
+
+        }
+    }
+
+
+
+    
+    
+    void TogglePlayerControl(bool shouldEnable) {
+        if (shouldEnable) {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            canControl = true; // Enable player control
+        } else {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            canControl = false; // Disable player control
+        }
+    }
+
+
+}
+
+
+
+
+
+/*
+//using Mirror;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -637,50 +918,3 @@ public class Player : NetworkBehaviour
 }
 */
 
-
-using UnityEngine;
-using Unity.Netcode;
-
-public class Player : NetworkBehaviour
-{
-    public float movementSpeed = 5.0f;
-    private CharacterController characterController;
-    private Transform cameraTransform;
-
-    private void Start()
-    {
-        characterController = GetComponent<CharacterController>();
-
-        // Ensure the camera is only enabled for the local player
-        if (IsLocalPlayer)
-        {
-            cameraTransform = Camera.main.transform;
-            Camera.main.transform.SetParent(transform);
-            Camera.main.transform.localPosition = new Vector3(0, 1, 0); // Adjust camera position relative to the player
-        }
-        else
-        {
-            // Disable components not needed for remote players
-            GetComponentInChildren<Camera>().enabled = false;
-        }
-    }
-
-    private void Update()
-    {
-        if (IsLocalPlayer)
-        {
-            MovePlayer();
-        }
-        // Additional player actions can be added here
-    }
-
-    private void MovePlayer()
-    {
-        Vector3 forwardMovement = cameraTransform.forward * Input.GetAxis("Vertical");
-        Vector3 rightMovement = cameraTransform.right * Input.GetAxis("Horizontal");
-
-        characterController.SimpleMove(Vector3.ClampMagnitude(forwardMovement + rightMovement, 1.0f) * movementSpeed);
-    }
-
-    // Other methods related to gameplay, like tagging, can be added here
-}

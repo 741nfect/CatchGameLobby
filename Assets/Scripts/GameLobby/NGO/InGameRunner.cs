@@ -43,6 +43,9 @@ namespace LobbyRelaySample.ngo
         private int m_remainingSymbolCount = 0; // Only used by the host.
         private float m_timeout = 10;
         private bool m_hasConnected = false;
+        
+        //i have the SpawnPoints object which has a transform list in it and i need to get the transform from that list
+
 
         [SerializeField]
         private PlayerData
@@ -71,7 +74,11 @@ namespace LobbyRelaySample.ngo
             m_onGameEnd = onGameEnd;
             m_canSpawnInGameObjects = null;
             m_localUserData = new PlayerData(localUser.DisplayName.Value, 0);
+            
+
         }
+        
+ 
 
         public override void OnNetworkSpawn()
         {
@@ -177,8 +184,13 @@ namespace LobbyRelaySample.ngo
         private void SpawnPlayerForClient(ulong clientId)
         {
             GameObject playerInstance = Instantiate(playerPrefab);
+
             playerInstance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
+            //im using the playerPrefab area in the inspector to assign the player prefab to the playerInstance
+            
         }
+        
+
 
         [ServerRpc(RequireOwnership = false)]
         public void DespawnPlayerServerRpc(ulong clientId)
