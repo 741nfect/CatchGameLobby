@@ -1,8 +1,12 @@
 ﻿
+
+
+using LobbyRelaySample;
 using Unity.Multiplayer.Samples.Utilities.ClientAuthority;
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class Player : NetworkBehaviour
 {
@@ -40,34 +44,43 @@ public class Player : NetworkBehaviour
     public NetworkVariable<float> staminaRegenerationRate = new NetworkVariable<float>();
     private float currentSprintTime; // Current available sprint time
     private float currentStamina; // Current total stamina capacity
+    
+    [Header("Sprint System")]
+    public GameObject UIArea;
+    public Slider sprintTimeSlider;
+    public Slider staminaSlider;
 
     
+    [Header("Player Roles")]
+    public Color catcherColor;
+    public Color runnerColor;
+    public Color hostageColor;
+    public enum PlayerRole { None, Catcher, Runner, Hostage }
+
     
+    public NetworkVariable<PlayerRole> playerRole = new NetworkVariable<PlayerRole>(PlayerRole.None);
     
+
+
+
 
 
     public override void OnNetworkSpawn()
     {
+        
+        playerRole.OnValueChanged += OnRoleChanged;
+        
         characterController = GetComponent<CharacterController>();
         clientNetworkTransform = GetComponent<ClientNetworkTransform>();
         // Ensure the camera is only enabled for the local player
         Debug.Log("OnNetworkSpawn");
         if (IsLocalPlayer)
         {
+            UIArea.SetActive(true);
+            
             //log the ownerclientid
             Debug.Log("OwnerClientId: " + OwnerClientId);
             PopulateSpawnPoints();
-            
-            Debug.Log("Player has been spawned on the client!");
-            //disable the character controller for the local player
-            
-            
-            //cameraTransform = Camera.main.transform;
-            playerCamera = GetComponentInChildren<Camera>();
-            Camera.main.transform.SetParent(transform);
-            Camera.main.transform.localPosition = new Vector3(0, 1, 0); // Adjust camera position relative to the player
-            
-            
             
             int spawnIndex = (int)(OwnerClientId % (ulong)spawnPoints.Length);           
             //SpawnPlayerInSpawnPointServerRpc(0);
@@ -76,6 +89,19 @@ public class Player : NetworkBehaviour
 
             characterController.enabled = true;
             
+            Debug.Log("Player has been spawned on the client!");
+            //disable the character controller for the local player
+            
+            
+            //cameraTransform = Camera.main.transform;
+            playerCamera = GetComponentInChildren<Camera>();
+            Camera.main.transform.SetParent(transform);
+            //Camera.main.transform.localPosition = new Vector3(0, 1, 0); // Adjust camera position relative to the player
+            
+            
+            
+
+            
             
             TogglePlayerControl(true);
             
@@ -83,6 +109,12 @@ public class Player : NetworkBehaviour
             // Initialize sprint and stamina variables
             currentSprintTime = maxStamina;
             currentStamina = maxStamina;
+            
+            staminaSlider.maxValue = maxStamina;
+            staminaSlider.value = currentStamina;
+            
+            sprintTimeSlider.maxValue = maxStamina;
+            sprintTimeSlider.value = currentSprintTime;
         
 
             
@@ -96,7 +128,67 @@ public class Player : NetworkBehaviour
             GetComponentInChildren<Camera>().enabled = false;
             GetComponentInChildren<AudioListener>().enabled = false;
         }
+        
+        //Player emote checker
+        for (int i = 0; i < GameManager.Instance.LocalLobby.PlayerCount; i++)
+        {
+            var player = GameManager.Instance.LocalLobby.GetLocalPlayer(i);
+            Debug.Log("Name:" + player.DisplayName.Value + " ID: " + player.ID.Value + " Emote: " + player.Emote.Value);
+        }
    
+    }
+    
+    private void OnDestroy()
+    {
+        playerRole.OnValueChanged -= OnRoleChanged;
+    }
+    
+    
+    private void OnRoleChanged(PlayerRole oldRole, PlayerRole newRole)
+    {
+        // Perform the color change and other role-specific logic
+        Color roleColor = GetColorForRole(newRole);
+        GetComponent<Renderer>().material.color = roleColor;
+        /*
+        if (newRole == PlayerRole.Hostage)
+        {
+            gameObject.layer = LayerMask.NameToLayer("Hostage");
+        }
+        else
+        {
+            gameObject.layer = LayerMask.NameToLayer("NonHostage");
+        }
+        */
+    }
+    
+    private Color GetColorForRole(PlayerRole role)
+    {   
+        switch (role)
+        {
+            case PlayerRole.Catcher:
+                return catcherColor;
+            case PlayerRole.Runner:
+                return runnerColor;
+            case PlayerRole.Hostage:
+                return hostageColor;
+            default:
+                return Color.white; // Default color if role isn't set or is None
+        }
+    }
+    
+    
+    public void RequestRoleChange(PlayerRole newRole)
+    {
+        if (IsOwner)
+        {
+            SetRoleServerRpc(newRole);
+        }
+    }
+
+    [ServerRpc]
+    private void SetRoleServerRpc(PlayerRole newRole)
+    {
+        playerRole.Value = newRole;
     }
     
     
@@ -148,6 +240,18 @@ public class Player : NetworkBehaviour
             if (!canControl && Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject()) { // Mouse click to relock
                 TogglePlayerControl(true);
             }
+            
+            // Always Apply gravity. Gravity is multiplied by deltaTime twice (once here, and once below
+            // when the moveDirection is multiplied by deltaTime). This is because gravity should be applied
+            // as an acceleration (ms^-2) (its out of cancontrol, cause it should always be applied)
+            if (!characterController.isGrounded)
+            {
+                moveDirection.y -= gravity.Value * Time.deltaTime;
+            }
+            
+            
+            bool isTryingToSprint = Input.GetKey(KeyCode.LeftShift);
+            bool canSprint = isTryingToSprint && currentSprintTime > 0 && currentStamina > 0;
 
             if (canControl)
             {
@@ -157,8 +261,6 @@ public class Player : NetworkBehaviour
                 Vector3 right = transform.TransformDirection(Vector3.right);
                 // Press Left Shift to run
                 // Determine if the player is trying to sprint and has the resources to do so
-                bool isTryingToSprint = Input.GetKey(KeyCode.LeftShift);
-                bool canSprint = isTryingToSprint && currentSprintTime > 0 && currentStamina > 0;
 
                 // Determine the target speed based on whether the player is sprinting or walking
                 float targetSpeed = canSprint ? runningSpeed.Value : walkingSpeed.Value;
@@ -179,13 +281,8 @@ public class Player : NetworkBehaviour
                     moveDirection.y = movementDirectionY;
                 }
 
-                // Apply gravity. Gravity is multiplied by deltaTime twice (once here, and once below
-                // when the moveDirection is multiplied by deltaTime). This is because gravity should be applied
-                // as an acceleration (ms^-2)
-                if (!characterController.isGrounded)
-                {
-                    moveDirection.y -= gravity.Value * Time.deltaTime;
-                }
+                
+                
 
                 // Move the controller
                 characterController.Move(moveDirection * Time.deltaTime);
@@ -199,21 +296,21 @@ public class Player : NetworkBehaviour
                     transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed.Value, 0);
                 }
 
-                /*
+                
                 // Listen for role assignment
                 if (Input.GetKeyDown(KeyCode.Alpha1))
                 {
-                    CmdAssignRole(PlayerRole.Catcher);
+                    RequestRoleChange(PlayerRole.Catcher);
                 }
                 else if (Input.GetKeyDown(KeyCode.Alpha2))
                 {
-                    CmdAssignRole(PlayerRole.Runner);
+                    RequestRoleChange(PlayerRole.Runner);
                 }
                 else if (Input.GetKeyDown(KeyCode.Alpha3))
                 {
-                    CmdAssignRole(PlayerRole.Hostage);
+                    RequestRoleChange(PlayerRole.Hostage);
                 }
-                */
+                
                 
                 
                 // Sprinting Input
@@ -227,32 +324,34 @@ public class Player : NetworkBehaviour
                     currentSprintTime = Mathf.Max(currentSprintTime, 0);
                     currentStamina = Mathf.Max(currentStamina, 0);
                 }
-                else
-                {
-                    // Refill sprint time and stamina when not sprinting
-                    if (!isTryingToSprint && currentSprintTime < currentStamina)
-                    {
-                        currentSprintTime += Time.deltaTime * sprintRefillRate.Value;
-                    }
-
-                    if (currentStamina < maxStamina)
-                    {
-                        currentStamina += Time.deltaTime * staminaRegenerationRate.Value;
-                    }
-
-                }
-
-                // Cap sprint time and stamina at their max values
-                currentSprintTime = Mathf.Min(currentSprintTime, currentStamina);
-                currentStamina = Mathf.Min(currentStamina, maxStamina);
                 
-                /*
-                sprintTimeSlider.value = currentSprintTime;
-                staminaSlider.value = currentStamina;
-                */
+                
+                
             
 
         }
+            if (!canSprint)
+            {
+                // Refill sprint time and stamina when not sprinting
+                if (!isTryingToSprint && currentSprintTime < currentStamina)
+                {
+                    currentSprintTime += Time.deltaTime * sprintRefillRate.Value;
+                }
+
+                if (currentStamina < maxStamina)
+                {
+                    currentStamina += Time.deltaTime * staminaRegenerationRate.Value;
+                }
+
+            }
+
+            // Cap sprint time and stamina at their max values
+            currentSprintTime = Mathf.Min(currentSprintTime, currentStamina);
+            currentStamina = Mathf.Min(currentStamina, maxStamina);
+                
+                
+            sprintTimeSlider.value = currentSprintTime;
+            staminaSlider.value = currentStamina;
     }
 
 
@@ -270,6 +369,9 @@ public class Player : NetworkBehaviour
             canControl = false; // Disable player control
         }
     }
+    
+    
+
 
 
 }
@@ -917,4 +1019,5 @@ public class Player : NetworkBehaviour
     
 }
 */
+
 

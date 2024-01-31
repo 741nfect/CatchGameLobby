@@ -60,7 +60,7 @@ namespace LobbyRelaySample
 
         public CallbackValue<long> LastUpdated = new CallbackValue<long>();
 
-        public int PlayerCount => m_LocalPlayers.Count;
+        public int PlayerCount => m_LocalPlayers.Count; 
         ServerAddress m_RelayServer;
 
         public List<LocalPlayer> LocalPlayers => m_LocalPlayers;

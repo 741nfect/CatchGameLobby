@@ -174,13 +174,21 @@ namespace LobbyRelaySample.ngo
                 {
                     SpawnPlayerForClient(client.Key);
                 }
+                /*
+                //Player emote checker
+                for (int i = 0; i < GameManager.Instance.LocalLobby.PlayerCount; i++)
+                {
+                    var player = GameManager.Instance.LocalLobby.GetLocalPlayer(i);
+                    Debug.Log("Name:" + player.DisplayName.Value + " ID: " + player.ID.Value + " Emote: " + player.Emote.Value);
+                }
+                */
                 m_canSpawnInGameObjects = true;
                 GameManager.Instance.BeginGame();
                 onGameBeginning?.Invoke();
             }
         }
-        
-        
+
+
         private void SpawnPlayerForClient(ulong clientId)
         {
             GameObject playerInstance = Instantiate(playerPrefab);
