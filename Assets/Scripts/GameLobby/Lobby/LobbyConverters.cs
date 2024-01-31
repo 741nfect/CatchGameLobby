@@ -17,6 +17,7 @@ namespace LobbyRelaySample.lobby
         const string key_Displayname = nameof(LocalPlayer.DisplayName);
         const string key_Userstatus = nameof(LocalPlayer.UserStatus);
         const string key_Emote = nameof(LocalPlayer.Emote);
+        const string key_RolePreference = nameof(LocalPlayer.RolePreference);
 
         public static Dictionary<string, string> LocalToRemoteLobbyData(LocalLobby lobby)
         {
@@ -94,12 +95,16 @@ namespace LobbyRelaySample.lobby
                 var userStatus = player.Data?.ContainsKey(key_Userstatus) == true
                     ? (PlayerStatus)int.Parse(player.Data[key_Userstatus].Value)
                     : PlayerStatus.Lobby;
+                
+                var role = player.Data?.ContainsKey(key_RolePreference) == true
+                    ? (RoleType)int.Parse(player.Data[key_RolePreference].Value)
+                    : RoleType.None;
 
                 LocalPlayer localPlayer = localLobby.GetLocalPlayer(index);
 
                 if (localPlayer == null)
                 {
-                    localPlayer = new LocalPlayer(id, index, isHost, displayName, emote, userStatus);
+                    localPlayer = new LocalPlayer(id, index, isHost, displayName, emote, role, userStatus);
                     localLobby.AddPlayer(index, localPlayer);
                 }
                 else

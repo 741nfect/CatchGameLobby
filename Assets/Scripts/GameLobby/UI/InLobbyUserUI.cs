@@ -20,9 +20,15 @@ namespace LobbyRelaySample.UI
 
         [SerializeField]
         Image m_EmoteImage;
+        
+        [SerializeField]
+        Image m_RoleImage;
 
         [SerializeField]
         Sprite[] m_EmoteIcons;
+        
+        [SerializeField]
+        Sprite[] m_RoleIcons;
 
         [SerializeField]
         vivox.VivoxUserHandler m_VivoxUserHandler;
@@ -73,6 +79,7 @@ namespace LobbyRelaySample.UI
                 return;
             UserId = null;
             SetEmote(EmoteType.None);
+            SetRolePreference(RoleType.None);
             SetUserStatus(PlayerStatus.Lobby);
             Hide();
             UnsubscribeToPlayerUpdates();
@@ -92,6 +99,11 @@ namespace LobbyRelaySample.UI
         void SetEmote(EmoteType emote)
         {
             m_EmoteImage.sprite = EmoteIcon(emote);
+        }
+        
+        void SetRolePreference(RoleType role)
+        {
+            m_RoleImage.sprite = RoleIcon(role);
         }
 
         void SetIsHost(bool isHost)
@@ -125,6 +137,24 @@ namespace LobbyRelaySample.UI
                 case EmoteType.Tongue:
                     m_EmoteImage.color = Color.white;
                     return m_EmoteIcons[3];
+                default:
+                    return null;
+            }
+        }
+        
+        Sprite RoleIcon(RoleType type)
+        {
+            switch (type)
+            {
+                case RoleType.None:
+                    m_EmoteImage.color = Color.clear;
+                    return null;
+                case RoleType.Catcher:
+                    m_EmoteImage.color = Color.white;
+                    return m_RoleIcons[0];
+                case RoleType.Runner:
+                    m_EmoteImage.color = Color.white;
+                    return m_RoleIcons[1];
                 default:
                     return null;
             }

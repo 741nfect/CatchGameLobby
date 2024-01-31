@@ -164,6 +164,12 @@ namespace LobbyRelaySample
             m_LocalUser.Emote.Value = emote;
             SendLocalUserData();
         }
+        
+        public void SetLocalUserRolePreference(RoleType role)
+        {
+            m_LocalUser.RolePreference.Value = role;
+            SendLocalUserData();
+        }
 
         public void SetLocalUserStatus(PlayerStatus status)
         {

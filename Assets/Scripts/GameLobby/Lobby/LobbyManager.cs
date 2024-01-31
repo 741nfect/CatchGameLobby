@@ -23,6 +23,7 @@ namespace LobbyRelaySample
         const string key_Displayname = nameof(LocalPlayer.DisplayName);
         const string key_Userstatus = nameof(LocalPlayer.UserStatus);
         const string key_Emote = nameof(LocalPlayer.Emote);
+        const string key_RolePreference = nameof(LocalPlayer.RolePreference);
 
         //Once connected to a lobby, cache the local lobby object so we don't query for it for every lobby operation.
         // (This assumes that the game will be actively in just one lobby at a time, though they could be in more on the service side.)
@@ -401,6 +402,8 @@ namespace LobbyRelaySample
                 player.UserStatus.Value = (PlayerStatus)int.Parse(playerDataValue);
             else if (dataKey == key_Displayname)
                 player.DisplayName.Value = playerDataValue;
+            else if (dataKey == key_RolePreference)
+                player.RolePreference.Value = (RoleType)int.Parse(playerDataValue);
         }
 
         public async Task<Lobby> GetLobbyAsync(string lobbyId = null)

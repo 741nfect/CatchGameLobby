@@ -26,6 +26,7 @@ namespace LobbyRelaySample
         public CallbackValue<bool> IsHost = new CallbackValue<bool>(false);
         public CallbackValue<string> DisplayName = new CallbackValue<string>("");
         public CallbackValue<EmoteType> Emote = new CallbackValue<EmoteType>(EmoteType.None);
+        public CallbackValue<RoleType> RolePreference = new CallbackValue<RoleType>(RoleType.None);
         public CallbackValue<PlayerStatus> UserStatus = new CallbackValue<PlayerStatus>((PlayerStatus)0);
         public CallbackValue<string> ID = new CallbackValue<string>("");
         public CallbackValue<int> Index = new CallbackValue<int>(0);
@@ -33,13 +34,14 @@ namespace LobbyRelaySample
         public DateTime LastUpdated;
 
         public LocalPlayer(string id, int index, bool isHost, string displayName = default,
-            EmoteType emote = default, PlayerStatus status = default)
+            EmoteType emote = default, RoleType role = default, PlayerStatus status = default)
         {
             ID.Value = id;
             IsHost.Value = isHost;
             Index.Value = index;
             DisplayName.Value = displayName;
             Emote.Value = emote;
+            RolePreference.Value = role;
             UserStatus.Value = status;
         }
 
@@ -47,6 +49,7 @@ namespace LobbyRelaySample
         {
             IsHost.Value = false;
             Emote.Value = EmoteType.None;
+            RolePreference.Value = RoleType.None;
             UserStatus.Value = PlayerStatus.Menu;
         }
     }
