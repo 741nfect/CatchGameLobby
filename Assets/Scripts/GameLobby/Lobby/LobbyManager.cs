@@ -396,6 +396,7 @@ namespace LobbyRelaySample
 
         void ParseCustomPlayerData(LocalPlayer player, string dataKey, string playerDataValue)
         {
+            Debug.Log($"Player {player.DisplayName.Value} has changed {dataKey} to {playerDataValue}");
             if (dataKey == key_Emote)
                 player.Emote.Value = (EmoteType)int.Parse(playerDataValue);
             else if (dataKey == key_Userstatus)

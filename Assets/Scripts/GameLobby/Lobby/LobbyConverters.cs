@@ -38,6 +38,7 @@ namespace LobbyRelaySample.lobby
             data.Add(key_Displayname, user.DisplayName.Value);
             data.Add(key_Userstatus, ((int)user.UserStatus.Value).ToString());
             data.Add(key_Emote, ((int)user.Emote.Value).ToString());
+            data.Add(key_RolePreference, ((int)user.RolePreference.Value).ToString());
             return data;
         }
 
@@ -96,7 +97,7 @@ namespace LobbyRelaySample.lobby
                     ? (PlayerStatus)int.Parse(player.Data[key_Userstatus].Value)
                     : PlayerStatus.Lobby;
                 
-                var role = player.Data?.ContainsKey(key_RolePreference) == true
+                var rolePreference = player.Data?.ContainsKey(key_RolePreference) == true
                     ? (RoleType)int.Parse(player.Data[key_RolePreference].Value)
                     : RoleType.None;
 
@@ -104,7 +105,7 @@ namespace LobbyRelaySample.lobby
 
                 if (localPlayer == null)
                 {
-                    localPlayer = new LocalPlayer(id, index, isHost, displayName, emote, role, userStatus);
+                    localPlayer = new LocalPlayer(id, index, isHost, displayName, emote, rolePreference, userStatus);
                     localLobby.AddPlayer(index, localPlayer);
                 }
                 else

@@ -12,6 +12,7 @@ namespace LobbyRelaySample.UI
 
         public void SetPlayerRolePreference()
         {
+            Debug.Log("SetPlayerRolePreference");
             Manager.SetLocalUserRolePreference(m_roleType);
         }
     }

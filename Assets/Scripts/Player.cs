@@ -78,8 +78,6 @@ public class Player : NetworkBehaviour
         {
             UIArea.SetActive(true);
             
-            //log the ownerclientid
-            Debug.Log("OwnerClientId: " + OwnerClientId);
             PopulateSpawnPoints();
             
             int spawnIndex = (int)(OwnerClientId % (ulong)spawnPoints.Length);           
@@ -88,8 +86,7 @@ public class Player : NetworkBehaviour
             clientNetworkTransform.transform.position = spawnPoints[spawnIndex].position;
 
             characterController.enabled = true;
-            
-            Debug.Log("Player has been spawned on the client!");
+
             //disable the character controller for the local player
             
             
@@ -117,7 +114,9 @@ public class Player : NetworkBehaviour
             sprintTimeSlider.value = currentSprintTime;
         
 
+
             
+            RequestRoleAssignmentServerRpc(GameManager.Instance.m_LocalUser.ID.Value);  
             
 
             
@@ -128,14 +127,31 @@ public class Player : NetworkBehaviour
             GetComponentInChildren<Camera>().enabled = false;
             GetComponentInChildren<AudioListener>().enabled = false;
         }
-        
-        //Player emote checker
-        for (int i = 0; i < GameManager.Instance.LocalLobby.PlayerCount; i++)
+
+    }
+    
+    [ServerRpc]
+    void RequestRoleAssignmentServerRpc(string localUserID)
+    {
+        //go to ingamerunner.cs and get your role
+        //Debug.Log("RequestRoleAssignmentServerRpc");
+        Debug.Log("RequestRoleAssignmentServerRpc");
+
+        //in GameManager.Instance.playerRoleAssignments dictionary find the role for the localUserID
+
+        foreach (var player in GameManager.Instance.playerRoleAssignments)
         {
-            var player = GameManager.Instance.LocalLobby.GetLocalPlayer(i);
-            Debug.Log("Name:" + player.DisplayName.Value + " ID: " + player.ID.Value + " Emote: " + player.Emote.Value);
+            Debug.Log("LocalUserID: " + localUserID);
+            if (player.Key == localUserID)
+            {
+                Debug.Log("Player Matched");
+                Debug.Log("Player Role: " + player.Value);
+                playerRole.Value = (PlayerRole)player.Value;
+            }
         }
-   
+
+
+
     }
     
     private void OnDestroy()

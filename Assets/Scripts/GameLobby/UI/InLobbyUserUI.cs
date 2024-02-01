@@ -43,7 +43,9 @@ namespace LobbyRelaySample.UI
             m_LocalPlayer = localPlayer;
             UserId = localPlayer.ID.Value;
             SetIsHost(localPlayer.IsHost.Value);
+            Debug.Log("SetRole: " + localPlayer.RolePreference.Value);
             SetEmote(localPlayer.Emote.Value);
+            SetRolePreference(localPlayer.RolePreference.Value);
             SetUserStatus(localPlayer.UserStatus.Value);
             SetDisplayName(m_LocalPlayer.DisplayName.Value);
             SubscribeToPlayerUpdates();
@@ -56,6 +58,7 @@ namespace LobbyRelaySample.UI
             m_LocalPlayer.DisplayName.onChanged += SetDisplayName;
             m_LocalPlayer.UserStatus.onChanged += SetUserStatus;
             m_LocalPlayer.Emote.onChanged += SetEmote;
+            m_LocalPlayer.RolePreference.onChanged += SetRolePreference;
             m_LocalPlayer.IsHost.onChanged += SetIsHost;
         }
 
@@ -71,6 +74,8 @@ namespace LobbyRelaySample.UI
                 m_LocalPlayer.Emote.onChanged -= SetEmote;
             if (m_LocalPlayer.IsHost?.onChanged != null)
                 m_LocalPlayer.IsHost.onChanged -= SetIsHost;
+            if (m_LocalPlayer.RolePreference?.onChanged != null)
+                m_LocalPlayer.RolePreference.onChanged -= SetRolePreference;
         }
 
         public void ResetUI()
@@ -144,16 +149,17 @@ namespace LobbyRelaySample.UI
         
         Sprite RoleIcon(RoleType type)
         {
+            Debug.Log("RoleIcon: " + type);
             switch (type)
             {
                 case RoleType.None:
-                    m_EmoteImage.color = Color.clear;
+                    m_RoleImage.color = Color.clear;
                     return null;
                 case RoleType.Catcher:
-                    m_EmoteImage.color = Color.white;
+                    m_RoleImage.color = Color.white;
                     return m_RoleIcons[0];
                 case RoleType.Runner:
-                    m_EmoteImage.color = Color.white;
+                    m_RoleImage.color = Color.white;
                     return m_RoleIcons[1];
                 default:
                     return null;

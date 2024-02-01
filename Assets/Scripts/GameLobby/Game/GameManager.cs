@@ -57,6 +57,8 @@ namespace LobbyRelaySample
         LobbyColor m_lobbyColorFilter;
 
         static GameManager m_GameManagerInstance;
+        
+        public Dictionary<string, int> playerRoleAssignments = new Dictionary<string, int>();
 
         public static GameManager Instance
         {
@@ -167,6 +169,7 @@ namespace LobbyRelaySample
         
         public void SetLocalUserRolePreference(RoleType role)
         {
+            Debug.Log($"Setting role preference to {role}");
             m_LocalUser.RolePreference.Value = role;
             SendLocalUserData();
         }

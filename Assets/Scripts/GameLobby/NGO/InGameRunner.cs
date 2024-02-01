@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
+using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
 namespace LobbyRelaySample.ngo
@@ -44,6 +45,10 @@ namespace LobbyRelaySample.ngo
         private float m_timeout = 10;
         private bool m_hasConnected = false;
         
+
+        
+
+
         //i have the SpawnPoints object which has a transform list in it and i need to get the transform from that list
 
 
@@ -169,22 +174,28 @@ namespace LobbyRelaySample.ngo
             Debug.Log("BeginGame1");
             if (IsServer)
             {
+
+               PlayerRoleDecider(); 
+                
                 Debug.Log("BeginGame2");
                 foreach (var client in NetworkManager.Singleton.ConnectedClients)
                 {
                     SpawnPlayerForClient(client.Key);
                 }
-                /*
-                //Player emote checker
-                for (int i = 0; i < GameManager.Instance.LocalLobby.PlayerCount; i++)
-                {
-                    var player = GameManager.Instance.LocalLobby.GetLocalPlayer(i);
-                    Debug.Log("Name:" + player.DisplayName.Value + " ID: " + player.ID.Value + " Emote: " + player.Emote.Value);
-                }
-                */
+                
+
+                
                 m_canSpawnInGameObjects = true;
                 GameManager.Instance.BeginGame();
                 onGameBeginning?.Invoke();
+                
+                var allLocalPlayers = GameManager.Instance.LocalLobby.GetAllLocalPlayers();
+                Debug.Log("all local players count: " + allLocalPlayers.Count );
+                
+                foreach (var player in allLocalPlayers)
+                {
+                    Debug.Log($"Player ID: {player.ID.Value}, Name: {player.DisplayName.Value}, RolePreference: {player.RolePreference.Value}, Status: {player.UserStatus.Value}");
+                }
             }
         }
 
@@ -195,7 +206,7 @@ namespace LobbyRelaySample.ngo
 
             playerInstance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
             //im using the playerPrefab area in the inspector to assign the player prefab to the playerInstance
-            
+
         }
         
 
@@ -258,5 +269,20 @@ namespace LobbyRelaySample.ngo
         {
             m_onGameEnd();
         }
+        
+        private void PlayerRoleDecider()
+        {
+            //clear the dictionary
+            GameManager.Instance.playerRoleAssignments.Clear();
+            var allLocalPlayers = GameManager.Instance.LocalLobby.GetAllLocalPlayers();
+            foreach (var player in allLocalPlayers)
+            {
+                GameManager.Instance.playerRoleAssignments.Add(player.ID.Value, (int)player.RolePreference.Value);
+            }
+        }
+        
+        
+
+        
     }
 }
