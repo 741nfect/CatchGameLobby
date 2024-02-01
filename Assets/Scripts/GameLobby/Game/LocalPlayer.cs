@@ -34,14 +34,14 @@ namespace LobbyRelaySample
         public DateTime LastUpdated;
 
         public LocalPlayer(string id, int index, bool isHost, string displayName = default,
-            EmoteType emote = default, RoleType role = default, PlayerStatus status = default)
+            EmoteType emote = default, RoleType rolePreference = default, PlayerStatus status = default)
         {
             ID.Value = id;
             IsHost.Value = isHost;
             Index.Value = index;
             DisplayName.Value = displayName;
             Emote.Value = emote;
-            RolePreference.Value = role;
+            RolePreference.Value = rolePreference;
             UserStatus.Value = status;
         }
 

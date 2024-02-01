@@ -98,6 +98,8 @@ namespace LobbyRelaySample
             return PlayerCount > index ? m_LocalPlayers[index] : null;
         }
 
+        public List<LocalPlayer> GetAllLocalPlayers() => m_LocalPlayers;
+
         private void OnHostChanged(string newHostId)
         {
             foreach(var player in m_LocalPlayers)

@@ -133,8 +133,12 @@ public class Player : NetworkBehaviour
         for (int i = 0; i < GameManager.Instance.LocalLobby.PlayerCount; i++)
         {
             var player = GameManager.Instance.LocalLobby.GetLocalPlayer(i);
-            Debug.Log("Name:" + player.DisplayName.Value + " ID: " + player.ID.Value + " Emote: " + player.Emote.Value);
+            Debug.Log("Name:" + player.DisplayName.Value + " ID: " + player.ID.Value + " Emote: " + player.Emote.Value + " Role: " + player.RolePreference.Value);
         }
+        
+        Debug.Log("All Players" + GameManager.Instance.LocalLobby.GetAllLocalPlayers());
+        
+       
    
     }
     

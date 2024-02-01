@@ -167,6 +167,7 @@ namespace LobbyRelaySample
         
         public void SetLocalUserRolePreference(RoleType role)
         {
+            Debug.Log($"Setting role preference to {role}");
             m_LocalUser.RolePreference.Value = role;
             SendLocalUserData();
         }

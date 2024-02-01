@@ -224,6 +224,17 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &23776565 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1671578767015189383, guid: 9aae991127b410c45a001ecd7f75311d, type: 3}
+  m_PrefabInstance: {fileID: 8628454959146822954}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b114d48a2f7c4b1e89debfe64107ef70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &203192673
 GameObject:
   m_ObjectHideFlags: 0
@@ -538,6 +549,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 78d292f3bd9f1614cb744dcb4fe3ac12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &867241553 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 322061568231827871, guid: 9aae991127b410c45a001ecd7f75311d, type: 3}
+  m_PrefabInstance: {fileID: 8628454959146822954}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b114d48a2f7c4b1e89debfe64107ef70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &921599257 stripped
@@ -1420,6 +1442,18 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1141156167034121253, guid: 9aae991127b410c45a001ecd7f75311d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 23776565}
+    - target: {fileID: 1141156167034121253, guid: 9aae991127b410c45a001ecd7f75311d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: SetPlayerRolePreference
+      objectReference: {fileID: 0}
+    - target: {fileID: 1141156167034121253, guid: 9aae991127b410c45a001ecd7f75311d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: LobbyRelaySample.UI.RolePreferenceButtonUI, GameLobby
+      objectReference: {fileID: 0}
     - target: {fileID: 1166753073431177940, guid: 9aae991127b410c45a001ecd7f75311d, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -1935,6 +1969,18 @@ PrefabInstance:
     - target: {fileID: 2938110563166987729, guid: 9aae991127b410c45a001ecd7f75311d, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3465534593435881223, guid: 9aae991127b410c45a001ecd7f75311d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 867241553}
+    - target: {fileID: 3465534593435881223, guid: 9aae991127b410c45a001ecd7f75311d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: SetPlayerRolePreference
+      objectReference: {fileID: 0}
+    - target: {fileID: 3465534593435881223, guid: 9aae991127b410c45a001ecd7f75311d, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: LobbyRelaySample.UI.RolePreferenceButtonUI, GameLobby
       objectReference: {fileID: 0}
     - target: {fileID: 3470215534644360489, guid: 9aae991127b410c45a001ecd7f75311d, type: 3}
       propertyPath: m_AnchorMax.y
