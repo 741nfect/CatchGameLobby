@@ -57,6 +57,8 @@ namespace LobbyRelaySample
         LobbyColor m_lobbyColorFilter;
 
         static GameManager m_GameManagerInstance;
+        
+        public Dictionary<string, int> playerRoleAssignments = new Dictionary<string, int>();
 
         public static GameManager Instance
         {
