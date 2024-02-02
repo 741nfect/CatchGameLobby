@@ -2,6 +2,7 @@
 
 
 using LobbyRelaySample;
+using LobbyRelaySample.ngo;
 using Unity.Multiplayer.Samples.Utilities.ClientAuthority;
 using UnityEngine;
 using Unity.Netcode;
@@ -73,7 +74,6 @@ public class Player : NetworkBehaviour
         characterController = GetComponent<CharacterController>();
         clientNetworkTransform = GetComponent<ClientNetworkTransform>();
         // Ensure the camera is only enabled for the local player
-        Debug.Log("OnNetworkSpawn");
         if (IsLocalPlayer)
         {
             UIArea.SetActive(true);
@@ -133,25 +133,13 @@ public class Player : NetworkBehaviour
     [ServerRpc]
     void RequestRoleAssignmentServerRpc(string localUserID)
     {
-        //go to ingamerunner.cs and get your role
-        //Debug.Log("RequestRoleAssignmentServerRpc");
-        Debug.Log("RequestRoleAssignmentServerRpc");
-
-        //in GameManager.Instance.playerRoleAssignments dictionary find the role for the localUserID
-
         foreach (var player in GameManager.Instance.playerRoleAssignments)
         {
-            Debug.Log("LocalUserID: " + localUserID);
             if (player.Key == localUserID)
             {
-                Debug.Log("Player Matched");
-                Debug.Log("Player Role: " + player.Value);
                 playerRole.Value = (PlayerRole)player.Value;
             }
         }
-
-
-
     }
     
     private void OnDestroy()
@@ -221,175 +209,131 @@ public class Player : NetworkBehaviour
             Debug.LogError("No game objects found with tag 'SpawnPoint'!");
             return;
         }
-
-        // If you need Transforms, extract them from the GameObjects
         spawnPoints = new Transform[spawnPointObjects.Length];
-
         for (int i = 0; i < spawnPointObjects.Length; i++)
         {
-            Debug.Log("Spawn point " + i + " found at " + spawnPointObjects[i].transform.position);
             spawnPoints[i] = spawnPointObjects[i].transform;
         }
     }
-    
-    
-    
+
+
     private void Update()
     {
+        if (!IsOwner) return;
 
-        if (!IsOwner)
+
+        //MovePlayer();
+
+
+        // Handling cursor locking and visibility toggle
+        if (Input.GetKeyDown(KeyCode.Escape)) TogglePlayerControl(false);
+
+        // Handling relocking the cursor with a mouse click
+        if (!canControl && Input.GetMouseButtonDown(0) &&
+            !EventSystem.current.IsPointerOverGameObject()) // Mouse click to relock
+            TogglePlayerControl(true);
+
+        // Always Apply gravity. Gravity is multiplied by deltaTime twice (once here, and once below
+        // when the moveDirection is multiplied by deltaTime). This is because gravity should be applied
+        // as an acceleration (ms^-2) (its out of cancontrol, cause it should always be applied)
+        if (!characterController.isGrounded) moveDirection.y -= gravity.Value * Time.deltaTime;
+
+
+        var isTryingToSprint = Input.GetKey(KeyCode.LeftShift);
+        var canSprint = isTryingToSprint && currentSprintTime > 0 && currentStamina > 0;
+
+        if (canControl)
         {
-            return;
+            // We are grounded, so recalculate move direction based on axes
+            var forward = transform.TransformDirection(Vector3.forward);
+            var right = transform.TransformDirection(Vector3.right);
+            // Press Left Shift to run
+            // Determine if the player is trying to sprint and has the resources to do so
+
+            // Determine the target speed based on whether the player is sprinting or walking
+            var targetSpeed = canSprint ? runningSpeed.Value : walkingSpeed.Value;
+
+            // Apply the target speed to movement calculations
+            var curSpeedX = canMove ? targetSpeed * Input.GetAxis("Vertical") : 0;
+            var curSpeedY = canMove ? targetSpeed * Input.GetAxis("Horizontal") : 0;
+
+            var movementDirectionY = moveDirection.y;
+            moveDirection = forward * curSpeedX + right * curSpeedY;
+
+            if (Input.GetButton("Jump") && canMove && characterController.isGrounded)
+                moveDirection.y = jumpSpeed.Value;
+            else
+                moveDirection.y = movementDirectionY;
+
+
+            // Move the controller
+            characterController.Move(moveDirection * Time.deltaTime);
+
+            // Player and Camera rotation
+            if (canMove)
+            {
+                rotationX += -Input.GetAxis("Mouse Y") * lookSpeed.Value;
+                rotationX = Mathf.Clamp(rotationX, -lookXLimit.Value, lookXLimit.Value);
+                playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
+                transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed.Value, 0);
+            }
+
+
+            // Listen for role assignment
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+                RequestRoleChange(PlayerRole.Catcher);
+            else if (Input.GetKeyDown(KeyCode.Alpha2))
+                RequestRoleChange(PlayerRole.Runner);
+            else if (Input.GetKeyDown(KeyCode.Alpha3)) RequestRoleChange(PlayerRole.Hostage);
+
+
+            // Sprinting Input
+            if (canSprint)
+            {
+                /// Drain sprint time and apply continuous stamina penalty
+                currentSprintTime -= Time.deltaTime * sprintDrainRate.Value;
+                currentStamina -= Time.deltaTime * staminaPenaltyRate.Value;
+
+                // Ensure sprint time and stamina don't go below zero
+                currentSprintTime = Mathf.Max(currentSprintTime, 0);
+                currentStamina = Mathf.Max(currentStamina, 0);
+            }
         }
 
-        
-            //MovePlayer();
-            
-            
-            // Handling cursor locking and visibility toggle
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                TogglePlayerControl(false);
-            }
-            
-            // Handling relocking the cursor with a mouse click
-            if (!canControl && Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject()) { // Mouse click to relock
-                TogglePlayerControl(true);
-            }
-            
-            // Always Apply gravity. Gravity is multiplied by deltaTime twice (once here, and once below
-            // when the moveDirection is multiplied by deltaTime). This is because gravity should be applied
-            // as an acceleration (ms^-2) (its out of cancontrol, cause it should always be applied)
-            if (!characterController.isGrounded)
-            {
-                moveDirection.y -= gravity.Value * Time.deltaTime;
-            }
-            
-            
-            bool isTryingToSprint = Input.GetKey(KeyCode.LeftShift);
-            bool canSprint = isTryingToSprint && currentSprintTime > 0 && currentStamina > 0;
+        if (!canSprint)
+        {
+            // Refill sprint time and stamina when not sprinting
+            if (!isTryingToSprint && currentSprintTime < currentStamina)
+                currentSprintTime += Time.deltaTime * sprintRefillRate.Value;
 
-            if (canControl)
-            {
-
-                // We are grounded, so recalculate move direction based on axes
-                Vector3 forward = transform.TransformDirection(Vector3.forward);
-                Vector3 right = transform.TransformDirection(Vector3.right);
-                // Press Left Shift to run
-                // Determine if the player is trying to sprint and has the resources to do so
-
-                // Determine the target speed based on whether the player is sprinting or walking
-                float targetSpeed = canSprint ? runningSpeed.Value : walkingSpeed.Value;
-
-                // Apply the target speed to movement calculations
-                float curSpeedX = canMove ? targetSpeed * Input.GetAxis("Vertical") : 0;
-                float curSpeedY = canMove ? targetSpeed * Input.GetAxis("Horizontal") : 0;
-                
-                float movementDirectionY = moveDirection.y;
-                moveDirection = (forward * curSpeedX) + (right * curSpeedY);
-
-                if (Input.GetButton("Jump") && canMove && characterController.isGrounded)
-                {
-                    moveDirection.y = jumpSpeed.Value;
-                }
-                else
-                {
-                    moveDirection.y = movementDirectionY;
-                }
-
-                
-                
-
-                // Move the controller
-                characterController.Move(moveDirection * Time.deltaTime);
-
-                // Player and Camera rotation
-                if (canMove)
-                {
-                    rotationX += -Input.GetAxis("Mouse Y") * lookSpeed.Value;
-                    rotationX = Mathf.Clamp(rotationX, -lookXLimit.Value, lookXLimit.Value);
-                    playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
-                    transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed.Value, 0);
-                }
-
-                
-                // Listen for role assignment
-                if (Input.GetKeyDown(KeyCode.Alpha1))
-                {
-                    RequestRoleChange(PlayerRole.Catcher);
-                }
-                else if (Input.GetKeyDown(KeyCode.Alpha2))
-                {
-                    RequestRoleChange(PlayerRole.Runner);
-                }
-                else if (Input.GetKeyDown(KeyCode.Alpha3))
-                {
-                    RequestRoleChange(PlayerRole.Hostage);
-                }
-                
-                
-                
-                // Sprinting Input
-                if (canSprint)
-                {
-                    /// Drain sprint time and apply continuous stamina penalty
-                    currentSprintTime -= Time.deltaTime * sprintDrainRate.Value;
-                    currentStamina -= Time.deltaTime * staminaPenaltyRate.Value;
-
-                    // Ensure sprint time and stamina don't go below zero
-                    currentSprintTime = Mathf.Max(currentSprintTime, 0);
-                    currentStamina = Mathf.Max(currentStamina, 0);
-                }
-                
-                
-                
-            
-
+            if (currentStamina < maxStamina) currentStamina += Time.deltaTime * staminaRegenerationRate.Value;
         }
-            if (!canSprint)
-            {
-                // Refill sprint time and stamina when not sprinting
-                if (!isTryingToSprint && currentSprintTime < currentStamina)
-                {
-                    currentSprintTime += Time.deltaTime * sprintRefillRate.Value;
-                }
 
-                if (currentStamina < maxStamina)
-                {
-                    currentStamina += Time.deltaTime * staminaRegenerationRate.Value;
-                }
+        // Cap sprint time and stamina at their max values
+        currentSprintTime = Mathf.Min(currentSprintTime, currentStamina);
+        currentStamina = Mathf.Min(currentStamina, maxStamina);
 
-            }
 
-            // Cap sprint time and stamina at their max values
-            currentSprintTime = Mathf.Min(currentSprintTime, currentStamina);
-            currentStamina = Mathf.Min(currentStamina, maxStamina);
-                
-                
-            sprintTimeSlider.value = currentSprintTime;
-            staminaSlider.value = currentStamina;
+        sprintTimeSlider.value = currentSprintTime;
+        staminaSlider.value = currentStamina;
     }
 
 
-
-    
-    
-    void TogglePlayerControl(bool shouldEnable) {
-        if (shouldEnable) {
+    private void TogglePlayerControl(bool shouldEnable)
+    {
+        if (shouldEnable)
+        {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             canControl = true; // Enable player control
-        } else {
+        }
+        else
+        {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             canControl = false; // Disable player control
         }
     }
-    
-    
-
-
-
 }
 
 
