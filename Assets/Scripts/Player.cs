@@ -1,6 +1,7 @@
 ﻿
 
 
+using System.Collections;
 using LobbyRelaySample;
 using LobbyRelaySample.ngo;
 using Unity.Multiplayer.Samples.Utilities.ClientAuthority;
@@ -61,7 +62,7 @@ public class Player : NetworkBehaviour
     
     public NetworkVariable<PlayerRole> playerRole = new NetworkVariable<PlayerRole>(PlayerRole.None);
     
-
+    private Transform hostageAreaTransform; // Assign this in the Unity Editor
 
 
 
@@ -73,6 +74,12 @@ public class Player : NetworkBehaviour
         
         characterController = GetComponent<CharacterController>();
         clientNetworkTransform = GetComponent<ClientNetworkTransform>();
+
+        GameObject loadingScreen = GameObject.FindGameObjectWithTag("LoadingScreen");
+        GameObject hostageAreaGameObject = GameObject.FindGameObjectWithTag("HostageArea");
+        hostageAreaTransform = hostageAreaGameObject.transform;
+        loadingScreen.GetComponent<LoadingScreen>().AddSpawnedPlayer(OwnerClientId.ToString());
+
         // Ensure the camera is only enabled for the local player
         if (IsLocalPlayer)
         {
@@ -116,7 +123,7 @@ public class Player : NetworkBehaviour
 
 
             
-            RequestRoleAssignmentServerRpc(GameManager.Instance.m_LocalUser.ID.Value);  
+            
             
 
             
@@ -130,9 +137,17 @@ public class Player : NetworkBehaviour
 
     }
     
+    public void AllPlayersSpawned()
+    {
+        if (!IsLocalPlayer) return;
+        RequestRoleAssignmentServerRpc(GameManager.Instance.m_LocalUser.ID.Value);  
+        Debug.Log("All players have spawned");
+    }
+    
     [ServerRpc]
     void RequestRoleAssignmentServerRpc(string localUserID)
     {
+        //wait for 5 seconds before assigning roles
         foreach (var player in GameManager.Instance.playerRoleAssignments)
         {
             if (player.Key == localUserID)
@@ -141,6 +156,18 @@ public class Player : NetworkBehaviour
             }
         }
     }
+    
+    IEnumerator AssignRole(int role)
+    {
+        // Wait for 5 seconds
+        Debug.Log("Waiting for 5 seconds before assigning role");
+        yield return new WaitForSeconds(5f);
+        Debug.Log("5 seconds have passed");
+    
+        // Code to execute after the wait
+        
+    }
+
     
     private void OnDestroy()
     {
@@ -153,7 +180,7 @@ public class Player : NetworkBehaviour
         // Perform the color change and other role-specific logic
         Color roleColor = GetColorForRole(newRole);
         GetComponent<Renderer>().material.color = roleColor;
-        /*
+        
         if (newRole == PlayerRole.Hostage)
         {
             gameObject.layer = LayerMask.NameToLayer("Hostage");
@@ -162,7 +189,7 @@ public class Player : NetworkBehaviour
         {
             gameObject.layer = LayerMask.NameToLayer("NonHostage");
         }
-        */
+        
     }
     
     private Color GetColorForRole(PlayerRole role)
@@ -334,6 +361,94 @@ public class Player : NetworkBehaviour
             canControl = false; // Disable player control
         }
     }
+    
+    
+    
+    // This method is called when a player collides with another player.
+void OnControllerColliderHit(ControllerColliderHit hit)
+{
+    // Only the local player can tag other players.
+    if (!IsOwner) return;
+
+    var otherPlayer = hit.gameObject.GetComponent<Player>();
+    if (otherPlayer != null)
+    {
+        // Determine roles and perform tagging if conditions are met.
+        if (playerRole.Value == PlayerRole.Catcher && otherPlayer.playerRole.Value == PlayerRole.Runner)
+        {
+            TagPlayerServerRpc(otherPlayer.OwnerClientId);
+        }
+        else if (playerRole.Value == PlayerRole.Runner && otherPlayer.playerRole.Value == PlayerRole.Catcher)
+        {
+            // Handle being tagged by a catcher.
+            TagPlayerServerRpc(OwnerClientId);
+        }
+        else if ((playerRole.Value == PlayerRole.Runner && otherPlayer.playerRole.Value == PlayerRole.Hostage) ||
+                 (playerRole.Value == PlayerRole.Hostage && otherPlayer.playerRole.Value == PlayerRole.Runner))
+        {
+            // Free the hostage.
+            FreeHostageServerRpc(otherPlayer.OwnerClientId);
+        }
+    }
+}
+
+
+// ServerRpc to tag a player.
+[ServerRpc]
+void TagPlayerServerRpc(ulong playerId)
+{
+    if (NetworkManager.Singleton.ConnectedClients.TryGetValue(playerId, out var networkClient))
+    {
+        var player = networkClient.PlayerObject.GetComponent<Player>();
+        if (player != null && player.playerRole.Value == PlayerRole.Runner)
+        {
+            player.playerRole.Value = PlayerRole.Hostage;
+            
+            player.TeleportToHostageArea();
+        }
+    }
+}
+
+// ServerRpc to free a hostage.
+[ServerRpc]
+void FreeHostageServerRpc(ulong hostageId)
+{
+    if (NetworkManager.Singleton.ConnectedClients.TryGetValue(hostageId, out var networkClient))
+    {
+        var hostage = networkClient.PlayerObject.GetComponent<Player>();
+        if (hostage != null && hostage.playerRole.Value == PlayerRole.Hostage)
+        {
+            hostage.playerRole.Value = PlayerRole.Runner;
+            // Additional logic for freeing the hostage.
+        }
+    }
+}
+
+public void TeleportToHostageArea()
+{
+    if (IsServer)
+    {
+        // Disable the CharacterController to "ghost" the player.
+        characterController.enabled = false;
+        transform.position = hostageAreaTransform.position;
+        characterController.enabled = true;
+    }
+    else
+    {
+        TeleportToHostageAreaClientRpc();
+    }
+}
+
+[ClientRpc]
+public void TeleportToHostageAreaClientRpc()
+{
+    if (!IsServer) // Ensure this is only executed on clients.
+    {
+        characterController.enabled = false;
+        transform.position = hostageAreaTransform.position;
+        characterController.enabled = true;
+    }
+}
 }
 
 

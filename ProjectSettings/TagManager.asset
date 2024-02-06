@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 2
   tags:
   - SpawnPoint
+  - CinemachineTarget
+  - LoadingScreen
+  - HostageArea
   layers:
   - Default
   - TransparentFX
@@ -12,9 +15,9 @@ TagManager:
   - 
   - Water
   - UI
-  - 
-  - 
-  - 
+  - Hostage
+  - NonHostage
+  - HostageAreaWall
   - 
   - 
   - 

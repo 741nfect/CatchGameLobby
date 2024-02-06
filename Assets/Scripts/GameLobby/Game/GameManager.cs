@@ -48,7 +48,7 @@ namespace LobbyRelaySample
         Countdown m_countdown;
 
         public LocalPlayer m_LocalUser;
-        LocalLobby m_LocalLobby;
+        public LocalLobby m_LocalLobby;
 
         vivox.VivoxSetup m_VivoxSetup = new vivox.VivoxSetup();
         [SerializeField]
