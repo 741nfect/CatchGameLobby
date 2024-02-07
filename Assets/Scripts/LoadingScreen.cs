@@ -12,14 +12,14 @@ public class LoadingScreen : MonoBehaviour
     
     private int m_spawnedPlayerCount = 0;
     
-    public void AddSpawnedPlayer(string playerName)
+    public void AddSpawnedPlayer(Player player)
     {
-        Debug.Log("Player " + playerName + " has spawned");
+        Debug.Log("Player " + player.OwnerClientId + " has spawned");
         m_spawnedPlayerCount ++;
         
         //add a player card and change its name to to the player's name
         GameObject playerCard = Instantiate(PlayerCardPrefab, PlayerCardContainer.transform);
-        playerCard.GetComponentInChildren<TMPro.TextMeshProUGUI>().text = playerName;
+        playerCard.GetComponentInChildren<TMPro.TextMeshProUGUI>().text = player.OwnerClientId.ToString();
         
         if (GameManager.Instance.m_LocalLobby.PlayerCount == m_spawnedPlayerCount)
         {

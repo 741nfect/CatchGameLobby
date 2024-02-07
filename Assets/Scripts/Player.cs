@@ -1,9 +1,11 @@
 ﻿
 
 
+using System;
 using System.Collections;
 using LobbyRelaySample;
 using LobbyRelaySample.ngo;
+using Unity.Collections;
 using Unity.Multiplayer.Samples.Utilities.ClientAuthority;
 using UnityEngine;
 using Unity.Netcode;
@@ -24,6 +26,8 @@ public class Player : NetworkBehaviour
 
     Vector3 moveDirection = Vector3.zero;
     float rotationX = 0;
+    
+    public NetworkVariable<FixedString64Bytes> displayName = new NetworkVariable<FixedString64Bytes>(new FixedString64Bytes(""));
 
     [Header("Movement")]
     public NetworkVariable<float> walkingSpeed = new NetworkVariable<float>(7.5f);
@@ -63,6 +67,15 @@ public class Player : NetworkBehaviour
     public NetworkVariable<PlayerRole> playerRole = new NetworkVariable<PlayerRole>(PlayerRole.None);
     
     private Transform hostageAreaTransform; // Assign this in the Unity Editor
+    
+    public delegate void PlayerRoleChangedDelegate(Player player, PlayerRole newRole);
+    public event PlayerRoleChangedDelegate OnPlayerRoleChanged;
+    
+    private GameObject sessionMonitor;
+    
+    [SerializeField]
+    private GameObject MainCamera;
+
 
 
 
@@ -74,15 +87,21 @@ public class Player : NetworkBehaviour
         
         characterController = GetComponent<CharacterController>();
         clientNetworkTransform = GetComponent<ClientNetworkTransform>();
-
-        GameObject loadingScreen = GameObject.FindGameObjectWithTag("LoadingScreen");
-        GameObject hostageAreaGameObject = GameObject.FindGameObjectWithTag("HostageArea");
-        hostageAreaTransform = hostageAreaGameObject.transform;
-        loadingScreen.GetComponent<LoadingScreen>().AddSpawnedPlayer(OwnerClientId.ToString());
+        hostageAreaTransform = GameObject.FindGameObjectWithTag("HostageArea").transform;
+        
+        
 
         // Ensure the camera is only enabled for the local player
         if (IsLocalPlayer)
         {
+            
+           
+            SetDisplayNameServerRpc(new FixedString64Bytes(GameManager.Instance.m_LocalUser.DisplayName.Value.ToString()));
+            
+            //get gameobject tagged as mainCamera and enable it
+           MainCamera.SetActive(true);
+            
+            
             UIArea.SetActive(true);
             
             PopulateSpawnPoints();
@@ -129,11 +148,24 @@ public class Player : NetworkBehaviour
             
         }
         else
-        {
+        {   /*
             // Disable components not needed for remote players
             GetComponentInChildren<Camera>().enabled = false;
             GetComponentInChildren<AudioListener>().enabled = false;
+            */
         }
+        
+        //for every player that spawns, add them to the session monitor
+        
+        //its important to register the player before AddSpawnedPlayer is called because every player will call this method and after that first role pull will be called
+        //if it is not registered, it will not be able to handle the role change
+        
+        sessionMonitor = GameObject.FindGameObjectWithTag("SessionMonitor");
+        sessionMonitor.GetComponent<SessionMonitor>().RegisterPlayer(this);
+        
+        
+        GameObject loadingScreen = GameObject.FindGameObjectWithTag("LoadingScreen");
+        loadingScreen.GetComponent<LoadingScreen>().AddSpawnedPlayer(this);
 
     }
     
@@ -155,6 +187,13 @@ public class Player : NetworkBehaviour
                 playerRole.Value = (PlayerRole)player.Value;
             }
         }
+    }
+    
+    [ServerRpc]
+    public void SetDisplayNameServerRpc(FixedString64Bytes newName)
+    {
+        // Optional: Add validation logic here
+        displayName.Value = newName;
     }
     
     IEnumerator AssignRole(int role)
@@ -180,6 +219,9 @@ public class Player : NetworkBehaviour
         // Perform the color change and other role-specific logic
         Color roleColor = GetColorForRole(newRole);
         GetComponent<Renderer>().material.color = roleColor;
+        
+        // Invoke the event to notify listeners of the role change
+        OnPlayerRoleChanged?.Invoke(this, newRole);
         
         if (newRole == PlayerRole.Hostage)
         {
