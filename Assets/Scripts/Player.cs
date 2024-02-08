@@ -159,16 +159,6 @@ public class Player : NetworkBehaviour
         displayName.Value = newName;
     }
 
-    IEnumerator AssignRole(int role)
-    {
-        // Wait for 5 seconds
-        Debug.Log("Waiting for 5 seconds before assigning role");
-        yield return new WaitForSeconds(5f);
-        Debug.Log("5 seconds have passed");
-
-        // Code to execute after the wait
-    }
-
     private void OnDestroy()
     {
         playerRole.OnValueChanged -= OnRoleChanged;
@@ -388,9 +378,18 @@ public class Player : NetworkBehaviour
             {
                 player.playerRole.Value = PlayerRole.Hostage;
 
-                player.TeleportToHostageArea();
+                player.TeleportToHostageAreaClientRpc();
             }
         }
+    }
+    
+    
+    [ClientRpc]
+    public void TeleportToHostageAreaClientRpc()
+    {
+        characterController.enabled = false;
+        transform.position = hostageAreaTransform.position;
+        characterController.enabled = true;
     }
 
 // ServerRpc to free a hostage.
@@ -408,31 +407,7 @@ public class Player : NetworkBehaviour
         }
     }
 
-    public void TeleportToHostageArea()
-    {
-        if (IsServer)
-        {
-            // Disable the CharacterController to "ghost" the player.
-            characterController.enabled = false;
-            transform.position = hostageAreaTransform.position;
-            characterController.enabled = true;
-        }
-        else
-        {
-            TeleportToHostageAreaClientRpc();
-        }
-    }
-
-    [ClientRpc]
-    public void TeleportToHostageAreaClientRpc()
-    {
-        if (!IsServer) // Ensure this is only executed on clients.
-        {
-            characterController.enabled = false;
-            transform.position = hostageAreaTransform.position;
-            characterController.enabled = true;
-        }
-    }
+    
 }
 
 /*
