@@ -1,7 +1,4 @@
-﻿
-
-
-using System;
+﻿using System;
 using System.Collections;
 using LobbyRelaySample;
 using LobbyRelaySample.ngo;
@@ -18,95 +15,85 @@ public class Player : NetworkBehaviour
     private CharacterController characterController;
 
     public Camera playerCamera;
-    
+
     private ClientNetworkTransform clientNetworkTransform;
-    
+
     private Transform[] spawnPoints;
-    
 
     Vector3 moveDirection = Vector3.zero;
     float rotationX = 0;
-    
-    public NetworkVariable<FixedString64Bytes> displayName = new NetworkVariable<FixedString64Bytes>(new FixedString64Bytes(""));
 
-    [Header("Movement")]
-    public NetworkVariable<float> walkingSpeed = new NetworkVariable<float>(7.5f);
+    public NetworkVariable<FixedString64Bytes> displayName =
+        new NetworkVariable<FixedString64Bytes>(new FixedString64Bytes(""));
+
+    [Header("Movement")] public NetworkVariable<float> walkingSpeed = new NetworkVariable<float>(7.5f);
     public NetworkVariable<float> runningSpeed = new NetworkVariable<float>(11.5f);
     public NetworkVariable<float> jumpSpeed = new NetworkVariable<float>(8.0f);
     public NetworkVariable<float> gravity = new NetworkVariable<float>(20.0f);
     public NetworkVariable<float> lookSpeed = new NetworkVariable<float>(2.0f);
     public NetworkVariable<float> lookXLimit = new NetworkVariable<float>(45.0f);
-    
-    [HideInInspector]
-    public bool canMove = true;
+
+    [HideInInspector] public bool canMove = true;
     private bool canControl = true;
-    
-    
-    [Header("Sprint System")]
-    public float maxStamina;
+
+    [Header("Sprint System")] public float maxStamina;
     public NetworkVariable<float> sprintDrainRate = new NetworkVariable<float>();
     public NetworkVariable<float> sprintRefillRate = new NetworkVariable<float>();
     public NetworkVariable<float> staminaPenaltyRate = new NetworkVariable<float>();
     public NetworkVariable<float> staminaRegenerationRate = new NetworkVariable<float>();
     private float currentSprintTime; // Current available sprint time
     private float currentStamina; // Current total stamina capacity
-    
-    [Header("Sprint System")]
-    public GameObject UIArea;
+
+    [Header("Sprint System")] public GameObject UIArea;
     public Slider sprintTimeSlider;
     public Slider staminaSlider;
 
-    
-    [Header("Player Roles")]
-    public Color catcherColor;
+    [Header("Player Roles")] public Color catcherColor;
     public Color runnerColor;
     public Color hostageColor;
-    public enum PlayerRole { None, Catcher, Runner, Hostage }
 
-    
+    public enum PlayerRole
+    {
+        None,
+        Catcher,
+        Runner,
+        Hostage
+    }
+
     public NetworkVariable<PlayerRole> playerRole = new NetworkVariable<PlayerRole>(PlayerRole.None);
-    
+
     private Transform hostageAreaTransform; // Assign this in the Unity Editor
-    
+
     public delegate void PlayerRoleChangedDelegate(Player player, PlayerRole newRole);
+
     public event PlayerRoleChangedDelegate OnPlayerRoleChanged;
-    
+
     private GameObject sessionMonitor;
-    
-    [SerializeField]
-    private GameObject MainCamera;
 
-
-
-
+    [SerializeField] private GameObject MainCamera;
 
     public override void OnNetworkSpawn()
     {
-        
         playerRole.OnValueChanged += OnRoleChanged;
-        
+
         characterController = GetComponent<CharacterController>();
         clientNetworkTransform = GetComponent<ClientNetworkTransform>();
         hostageAreaTransform = GameObject.FindGameObjectWithTag("HostageArea").transform;
-        
-        
 
         // Ensure the camera is only enabled for the local player
         if (IsLocalPlayer)
         {
-            
-           
-            SetDisplayNameServerRpc(new FixedString64Bytes(GameManager.Instance.m_LocalUser.DisplayName.Value.ToString()));
-            
+            SetDisplayNameServerRpc(
+                new FixedString64Bytes(GameManager.Instance.m_LocalUser.DisplayName.Value.ToString()));
+
             //get gameobject tagged as mainCamera and enable it
-           MainCamera.SetActive(true);
-            
-            
+            MainCamera.SetActive(true);
+
             UIArea.SetActive(true);
-            
+
             PopulateSpawnPoints();
-            
-            int spawnIndex = (int)(OwnerClientId % (ulong)spawnPoints.Length);           
+
+            int spawnIndex = (int)(OwnerClientId % (ulong)spawnPoints.Length);
             //SpawnPlayerInSpawnPointServerRpc(0);
             characterController.enabled = false;
             clientNetworkTransform.transform.position = spawnPoints[spawnIndex].position;
@@ -114,68 +101,44 @@ public class Player : NetworkBehaviour
             characterController.enabled = true;
 
             //disable the character controller for the local player
-            
-            
+
             //cameraTransform = Camera.main.transform;
             playerCamera = GetComponentInChildren<Camera>();
             Camera.main.transform.SetParent(transform);
             //Camera.main.transform.localPosition = new Vector3(0, 1, 0); // Adjust camera position relative to the player
-            
-            
-            
 
-            
-            
             TogglePlayerControl(true);
-            
-            
+
             // Initialize sprint and stamina variables
             currentSprintTime = maxStamina;
             currentStamina = maxStamina;
-            
+
             staminaSlider.maxValue = maxStamina;
             staminaSlider.value = currentStamina;
-            
+
             sprintTimeSlider.maxValue = maxStamina;
             sprintTimeSlider.value = currentSprintTime;
-        
-
-
-            
-            
-            
-
-            
         }
-        else
-        {   /*
-            // Disable components not needed for remote players
-            GetComponentInChildren<Camera>().enabled = false;
-            GetComponentInChildren<AudioListener>().enabled = false;
-            */
-        }
-        
+
         //for every player that spawns, add them to the session monitor
-        
+
         //its important to register the player before AddSpawnedPlayer is called because every player will call this method and after that first role pull will be called
         //if it is not registered, it will not be able to handle the role change
-        
+
         sessionMonitor = GameObject.FindGameObjectWithTag("SessionMonitor");
         sessionMonitor.GetComponent<SessionMonitor>().RegisterPlayer(this);
-        
-        
+
         GameObject loadingScreen = GameObject.FindGameObjectWithTag("LoadingScreen");
         loadingScreen.GetComponent<LoadingScreen>().AddSpawnedPlayer(this);
-
     }
-    
+
     public void AllPlayersSpawned()
     {
         if (!IsLocalPlayer) return;
-        RequestRoleAssignmentServerRpc(GameManager.Instance.m_LocalUser.ID.Value);  
+        RequestRoleAssignmentServerRpc(GameManager.Instance.m_LocalUser.ID.Value);
         Debug.Log("All players have spawned");
     }
-    
+
     [ServerRpc]
     void RequestRoleAssignmentServerRpc(string localUserID)
     {
@@ -188,41 +151,38 @@ public class Player : NetworkBehaviour
             }
         }
     }
-    
+
     [ServerRpc]
     public void SetDisplayNameServerRpc(FixedString64Bytes newName)
     {
         // Optional: Add validation logic here
         displayName.Value = newName;
     }
-    
+
     IEnumerator AssignRole(int role)
     {
         // Wait for 5 seconds
         Debug.Log("Waiting for 5 seconds before assigning role");
         yield return new WaitForSeconds(5f);
         Debug.Log("5 seconds have passed");
-    
+
         // Code to execute after the wait
-        
     }
 
-    
     private void OnDestroy()
     {
         playerRole.OnValueChanged -= OnRoleChanged;
     }
-    
-    
+
     private void OnRoleChanged(PlayerRole oldRole, PlayerRole newRole)
     {
         // Perform the color change and other role-specific logic
         Color roleColor = GetColorForRole(newRole);
         GetComponent<Renderer>().material.color = roleColor;
-        
+
         // Invoke the event to notify listeners of the role change
         OnPlayerRoleChanged?.Invoke(this, newRole);
-        
+
         if (newRole == PlayerRole.Hostage)
         {
             gameObject.layer = LayerMask.NameToLayer("Hostage");
@@ -231,11 +191,10 @@ public class Player : NetworkBehaviour
         {
             gameObject.layer = LayerMask.NameToLayer("NonHostage");
         }
-        
     }
-    
+
     private Color GetColorForRole(PlayerRole role)
-    {   
+    {
         switch (role)
         {
             case PlayerRole.Catcher:
@@ -248,8 +207,7 @@ public class Player : NetworkBehaviour
                 return Color.white; // Default color if role isn't set or is None
         }
     }
-    
-    
+
     public void RequestRoleChange(PlayerRole newRole)
     {
         if (IsOwner)
@@ -263,12 +221,7 @@ public class Player : NetworkBehaviour
     {
         playerRole.Value = newRole;
     }
-    
-    
 
-    
-    
-    
     private void PopulateSpawnPoints()
     {
         GameObject[] spawnPointObjects = GameObject.FindGameObjectsWithTag("SpawnPoint");
@@ -278,6 +231,7 @@ public class Player : NetworkBehaviour
             Debug.LogError("No game objects found with tag 'SpawnPoint'!");
             return;
         }
+
         spawnPoints = new Transform[spawnPointObjects.Length];
         for (int i = 0; i < spawnPointObjects.Length; i++)
         {
@@ -285,14 +239,11 @@ public class Player : NetworkBehaviour
         }
     }
 
-
     private void Update()
     {
         if (!IsOwner) return;
 
-
         //MovePlayer();
-
 
         // Handling cursor locking and visibility toggle
         if (Input.GetKeyDown(KeyCode.Escape)) TogglePlayerControl(false);
@@ -306,7 +257,6 @@ public class Player : NetworkBehaviour
         // when the moveDirection is multiplied by deltaTime). This is because gravity should be applied
         // as an acceleration (ms^-2) (its out of cancontrol, cause it should always be applied)
         if (!characterController.isGrounded) moveDirection.y -= gravity.Value * Time.deltaTime;
-
 
         var isTryingToSprint = Input.GetKey(KeyCode.LeftShift);
         var canSprint = isTryingToSprint && currentSprintTime > 0 && currentStamina > 0;
@@ -334,7 +284,6 @@ public class Player : NetworkBehaviour
             else
                 moveDirection.y = movementDirectionY;
 
-
             // Move the controller
             characterController.Move(moveDirection * Time.deltaTime);
 
@@ -347,14 +296,12 @@ public class Player : NetworkBehaviour
                 transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed.Value, 0);
             }
 
-
             // Listen for role assignment
             if (Input.GetKeyDown(KeyCode.Alpha1))
                 RequestRoleChange(PlayerRole.Catcher);
             else if (Input.GetKeyDown(KeyCode.Alpha2))
                 RequestRoleChange(PlayerRole.Runner);
             else if (Input.GetKeyDown(KeyCode.Alpha3)) RequestRoleChange(PlayerRole.Hostage);
-
 
             // Sprinting Input
             if (canSprint)
@@ -382,11 +329,9 @@ public class Player : NetworkBehaviour
         currentSprintTime = Mathf.Min(currentSprintTime, currentStamina);
         currentStamina = Mathf.Min(currentStamina, maxStamina);
 
-
         sprintTimeSlider.value = currentSprintTime;
         staminaSlider.value = currentStamina;
     }
-
 
     private void TogglePlayerControl(bool shouldEnable)
     {
@@ -403,99 +348,92 @@ public class Player : NetworkBehaviour
             canControl = false; // Disable player control
         }
     }
-    
-    
-    
-    // This method is called when a player collides with another player.
-void OnControllerColliderHit(ControllerColliderHit hit)
-{
-    // Only the local player can tag other players.
-    if (!IsOwner) return;
 
-    var otherPlayer = hit.gameObject.GetComponent<Player>();
-    if (otherPlayer != null)
+    // This method is called when a player collides with another player.
+    void OnControllerColliderHit(ControllerColliderHit hit)
     {
-        // Determine roles and perform tagging if conditions are met.
-        if (playerRole.Value == PlayerRole.Catcher && otherPlayer.playerRole.Value == PlayerRole.Runner)
+        // Only the local player can tag other players.
+        if (!IsOwner) return;
+
+        var otherPlayer = hit.gameObject.GetComponent<Player>();
+        if (otherPlayer != null)
         {
-            TagPlayerServerRpc(otherPlayer.OwnerClientId);
-        }
-        else if (playerRole.Value == PlayerRole.Runner && otherPlayer.playerRole.Value == PlayerRole.Catcher)
-        {
-            // Handle being tagged by a catcher.
-            TagPlayerServerRpc(OwnerClientId);
-        }
-        else if ((playerRole.Value == PlayerRole.Runner && otherPlayer.playerRole.Value == PlayerRole.Hostage) ||
-                 (playerRole.Value == PlayerRole.Hostage && otherPlayer.playerRole.Value == PlayerRole.Runner))
-        {
-            // Free the hostage.
-            FreeHostageServerRpc(otherPlayer.OwnerClientId);
+            // Determine roles and perform tagging if conditions are met.
+            if (playerRole.Value == PlayerRole.Catcher && otherPlayer.playerRole.Value == PlayerRole.Runner)
+            {
+                TagPlayerServerRpc(otherPlayer.OwnerClientId);
+            }
+            else if (playerRole.Value == PlayerRole.Runner && otherPlayer.playerRole.Value == PlayerRole.Catcher)
+            {
+                // Handle being tagged by a catcher.
+                TagPlayerServerRpc(OwnerClientId);
+            }
+            else if ((playerRole.Value == PlayerRole.Runner && otherPlayer.playerRole.Value == PlayerRole.Hostage) ||
+                     (playerRole.Value == PlayerRole.Hostage && otherPlayer.playerRole.Value == PlayerRole.Runner))
+            {
+                // Free the hostage.
+                FreeHostageServerRpc(otherPlayer.OwnerClientId);
+            }
         }
     }
-}
-
 
 // ServerRpc to tag a player.
-[ServerRpc]
-void TagPlayerServerRpc(ulong playerId)
-{
-    if (NetworkManager.Singleton.ConnectedClients.TryGetValue(playerId, out var networkClient))
+    [ServerRpc]
+    void TagPlayerServerRpc(ulong playerId)
     {
-        var player = networkClient.PlayerObject.GetComponent<Player>();
-        if (player != null && player.playerRole.Value == PlayerRole.Runner)
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(playerId, out var networkClient))
         {
-            player.playerRole.Value = PlayerRole.Hostage;
-            
-            player.TeleportToHostageArea();
+            var player = networkClient.PlayerObject.GetComponent<Player>();
+            if (player != null && player.playerRole.Value == PlayerRole.Runner)
+            {
+                player.playerRole.Value = PlayerRole.Hostage;
+
+                player.TeleportToHostageArea();
+            }
         }
     }
-}
 
 // ServerRpc to free a hostage.
-[ServerRpc]
-void FreeHostageServerRpc(ulong hostageId)
-{
-    if (NetworkManager.Singleton.ConnectedClients.TryGetValue(hostageId, out var networkClient))
+    [ServerRpc]
+    void FreeHostageServerRpc(ulong hostageId)
     {
-        var hostage = networkClient.PlayerObject.GetComponent<Player>();
-        if (hostage != null && hostage.playerRole.Value == PlayerRole.Hostage)
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(hostageId, out var networkClient))
         {
-            hostage.playerRole.Value = PlayerRole.Runner;
-            // Additional logic for freeing the hostage.
+            var hostage = networkClient.PlayerObject.GetComponent<Player>();
+            if (hostage != null && hostage.playerRole.Value == PlayerRole.Hostage)
+            {
+                hostage.playerRole.Value = PlayerRole.Runner;
+                // Additional logic for freeing the hostage.
+            }
+        }
+    }
+
+    public void TeleportToHostageArea()
+    {
+        if (IsServer)
+        {
+            // Disable the CharacterController to "ghost" the player.
+            characterController.enabled = false;
+            transform.position = hostageAreaTransform.position;
+            characterController.enabled = true;
+        }
+        else
+        {
+            TeleportToHostageAreaClientRpc();
+        }
+    }
+
+    [ClientRpc]
+    public void TeleportToHostageAreaClientRpc()
+    {
+        if (!IsServer) // Ensure this is only executed on clients.
+        {
+            characterController.enabled = false;
+            transform.position = hostageAreaTransform.position;
+            characterController.enabled = true;
         }
     }
 }
-
-public void TeleportToHostageArea()
-{
-    if (IsServer)
-    {
-        // Disable the CharacterController to "ghost" the player.
-        characterController.enabled = false;
-        transform.position = hostageAreaTransform.position;
-        characterController.enabled = true;
-    }
-    else
-    {
-        TeleportToHostageAreaClientRpc();
-    }
-}
-
-[ClientRpc]
-public void TeleportToHostageAreaClientRpc()
-{
-    if (!IsServer) // Ensure this is only executed on clients.
-    {
-        characterController.enabled = false;
-        transform.position = hostageAreaTransform.position;
-        characterController.enabled = true;
-    }
-}
-}
-
-
-
-
 
 /*
 //using Mirror;
@@ -1136,5 +1074,3 @@ public class Player : NetworkBehaviour
     
 }
 */
-
-
