@@ -1,30 +1,42 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class SessionMonitor : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    [SerializeField]
+    private GameObject sessionMonitorCardPrefab;
+    [SerializeField]
+    private Transform playerCardsContainer; 
+    
 
-    // Update is called once per frame
-    void Update()
+    public void RegisterPlayer(Player _player)
     {
-        
-    }
-    
-    public void RegisterPlayer(Player player)
-    {
-        Debug.Log("Registering player: " + player);
+        Debug.Log("Registering player: " + _player);
         // Subscribe to player events
-        player.OnPlayerRoleChanged += HandlePlayerRoleChanged;
+        _player.OnPlayerRoleChanged += HandlePlayerRoleChanged;
     }
     
-    public void HandlePlayerRoleChanged(Player player, Player.PlayerRole newRole)
+    public void HandlePlayerRoleChanged(Player _player, Player.PlayerRole newRole)
     {
-        Debug.Log("Session Monitor/ Player role changed: " + player.displayName.Value.ToString() + " to " + newRole);
+        Debug.Log("Session Monitor/ Player role changed: " + _player.displayName.Value.ToString() + " to " + newRole);
+        
+        // Attempt to find an existing player card by playerId
+        SessionMonitorCard existingCard = playerCardsContainer.GetComponentsInChildren<SessionMonitorCard>()
+            .FirstOrDefault(card => card.player.NetworkObjectId == _player.NetworkObjectId);
+
+        if (existingCard != null) {
+            // Update existing card
+            existingCard.SetPlayerInfo(_player);
+        } else {
+            // Instantiate a new player card and set its information
+            GameObject newCardObj = Instantiate(sessionMonitorCardPrefab, playerCardsContainer);
+            SessionMonitorCard newCardScript = newCardObj.GetComponent<SessionMonitorCard>();
+            newCardScript.SetPlayerInfo(_player);
+            // If you implement a unique identifier, set it here as well
+            // newCardScript.PlayerId = playerId;
+        }
+        
     }
 }

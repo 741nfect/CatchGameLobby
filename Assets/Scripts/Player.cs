@@ -381,7 +381,7 @@ public class Player : NetworkBehaviour
                 player.TeleportToHostageAreaClientRpc();
             }
         }
-    }
+    } 
     
     
     [ClientRpc]

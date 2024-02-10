@@ -5320,9 +5320,9 @@ MonoBehaviour:
   UIArea: {fileID: 2525434081298084793}
   sprintTimeSlider: {fileID: 488907066180357090}
   staminaSlider: {fileID: 653080764067187573}
-  catcherColor: {r: 1, g: 0, b: 0, a: 0}
-  runnerColor: {r: 0, g: 1, b: 0.05882353, a: 0}
-  hostageColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 0}
+  catcherColor: {r: 1, g: 0, b: 0, a: 1}
+  runnerColor: {r: 0, g: 1, b: 0.05882353, a: 1}
+  hostageColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   playerRole:
     m_InternalValue: 0
   MainCamera: {fileID: 8543656502858838045}
