@@ -5604,6 +5604,7 @@ GameObject:
   - component: {fileID: 7585591781114893597}
   - component: {fileID: 2320548337303416265}
   - component: {fileID: 8920073706109767183}
+  - component: {fileID: -5562969283641970684}
   m_Layer: 0
   m_Name: MarkerMan
   m_TagString: Player
@@ -5818,9 +5819,9 @@ MonoBehaviour:
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
-  SyncRotAngleX: 0
+  SyncRotAngleX: 1
   SyncRotAngleY: 0
-  SyncRotAngleZ: 0
+  SyncRotAngleZ: 1
   SyncScaleX: 0
   SyncScaleY: 0
   SyncScaleZ: 0
@@ -5861,6 +5862,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   TransitionStateInfoList: []
   m_Animator: {fileID: 736837750840184289}
+--- !u!114 &-5562969283641970684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6727630872053332406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05bff8f277d354200a8097530fdbfa55, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 0}
 --- !u!1 &6816534415327451885
 GameObject:
   m_ObjectHideFlags: 0

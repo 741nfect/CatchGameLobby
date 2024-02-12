@@ -19,6 +19,8 @@ public class Player : NetworkBehaviour
     private ClientNetworkTransform clientNetworkTransform;
 
     private Transform[] spawnPoints;
+    
+    private AnimationStateController m_AnimationStateController;
 
     Vector3 moveDirection = Vector3.zero;
     float rotationX = 0;
@@ -78,6 +80,7 @@ public class Player : NetworkBehaviour
 
         characterController = GetComponent<CharacterController>();
         clientNetworkTransform = GetComponent<ClientNetworkTransform>();
+        m_AnimationStateController = GetComponent<AnimationStateController>();
         hostageAreaTransform = GameObject.FindGameObjectWithTag("HostageArea").transform;
 
         // Ensure the camera is only enabled for the local player
@@ -168,7 +171,7 @@ public class Player : NetworkBehaviour
     {
         // Perform the color change and other role-specific logic
         Color roleColor = GetColorForRole(newRole);
-        GetComponent<Renderer>().material.color = roleColor;
+        //GetComponent<Renderer>().material.color = roleColor;
 
         // Invoke the event to notify listeners of the role change
         OnPlayerRoleChanged?.Invoke(this, newRole);
@@ -265,6 +268,24 @@ public class Player : NetworkBehaviour
             // Apply the target speed to movement calculations
             var curSpeedX = canMove ? targetSpeed * Input.GetAxis("Vertical") : 0;
             var curSpeedY = canMove ? targetSpeed * Input.GetAxis("Horizontal") : 0;
+            
+            Debug.Log("curSpeedX: " + curSpeedX);
+            Debug.Log("curSpeedY: " + curSpeedY);
+            
+            m_AnimationStateController.animator.SetFloat("Velocity X", curSpeedX);
+            m_AnimationStateController.animator.SetFloat("Velocity Y", curSpeedY);
+            /*
+            // Set the animation state based on the player's movement
+                if (curSpeedX > 0 || curSpeedY > 0)
+                {
+                    m_AnimationStateController.animator.SetBool("isWalking", true);
+                }
+                else
+                {
+                    m_AnimationStateController.animator.SetBool("isWalking", false);
+                }
+                */
+            
 
             var movementDirectionY = moveDirection.y;
             moveDirection = forward * curSpeedX + right * curSpeedY;
@@ -285,7 +306,7 @@ public class Player : NetworkBehaviour
                 playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
                 transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed.Value, 0);
             }
-
+ 
             // Listen for role assignment
             if (Input.GetKeyDown(KeyCode.Alpha1))
                 RequestRoleChange(PlayerRole.Catcher);
