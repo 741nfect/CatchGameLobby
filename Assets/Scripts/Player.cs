@@ -259,6 +259,7 @@ public class Player : NetworkBehaviour
             // We are grounded, so recalculate move direction based on axes
             var forward = transform.TransformDirection(Vector3.forward);
             var right = transform.TransformDirection(Vector3.right);
+            
             // Press Left Shift to run
             // Determine if the player is trying to sprint and has the resources to do so
 
@@ -274,29 +275,17 @@ public class Player : NetworkBehaviour
             
             m_AnimationStateController.animator.SetFloat("Velocity X", curSpeedX);
             m_AnimationStateController.animator.SetFloat("Velocity Y", curSpeedY);
-            /*
-            // Set the animation state based on the player's movement
-                if (curSpeedX > 0 || curSpeedY > 0)
-                {
-                    m_AnimationStateController.animator.SetBool("isWalking", true);
-                }
-                else
-                {
-                    m_AnimationStateController.animator.SetBool("isWalking", false);
-                }
-                */
-            
-
+  
             var movementDirectionY = moveDirection.y;
             moveDirection = forward * curSpeedX + right * curSpeedY;
+            Vector3 velocity = moveDirection;
 
             if (Input.GetButton("Jump") && canMove && characterController.isGrounded)
                 moveDirection.y = jumpSpeed.Value;
             else
                 moveDirection.y = movementDirectionY;
 
-            // Move the controller
-            characterController.Move(moveDirection * Time.deltaTime);
+
 
             // Player and Camera rotation
             if (canMove)
@@ -342,6 +331,15 @@ public class Player : NetworkBehaviour
 
         sprintTimeSlider.value = currentSprintTime;
         staminaSlider.value = currentStamina;
+    }
+
+    private void OnAnimatorMove()
+    {
+        if (!IsOwner) return;
+        Vector3 velocity = m_AnimationStateController.animator.deltaPosition;
+        velocity.y = moveDirection.y * Time.deltaTime;
+        // Move the controller
+        characterController.Move(velocity);
     }
 
     private void TogglePlayerControl(bool shouldEnable)
