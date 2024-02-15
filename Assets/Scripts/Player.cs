@@ -73,6 +73,9 @@ public class Player : NetworkBehaviour
     private GameObject sessionMonitor;
 
     [SerializeField] private GameObject MainCamera;
+    
+    private float curSpeedX;
+    private float curSpeedY;
 
     public override void OnNetworkSpawn()
     {
@@ -267,8 +270,11 @@ public class Player : NetworkBehaviour
             var targetSpeed = canSprint ? runningSpeed.Value : walkingSpeed.Value;
 
             // Apply the target speed to movement calculations
-            var curSpeedX = canMove ? targetSpeed * Input.GetAxis("Vertical") : 0;
-            var curSpeedY = canMove ? targetSpeed * Input.GetAxis("Horizontal") : 0;
+            float desiredCurSpeedX = canMove ? targetSpeed * Input.GetAxis("Vertical") : 0;
+            float desiredCurSpeedY = canMove ? targetSpeed * Input.GetAxis("Horizontal") : 0;
+            // change curSpeedX and curSpeedY gradually to desiredCurSpeedX and desiredCurSpeedY
+            curSpeedX = Mathf.Lerp(curSpeedX, desiredCurSpeedX, 0.05f);
+            curSpeedY = Mathf.Lerp(curSpeedY, desiredCurSpeedY, 0.05f);
             
             Debug.Log("curSpeedX: " + curSpeedX);
             Debug.Log("curSpeedY: " + curSpeedY);
