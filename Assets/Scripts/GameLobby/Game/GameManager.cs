@@ -306,7 +306,8 @@ namespace LobbyRelaySample
 
             await InitializeServices();
             AuthenticatePlayer();
-            StartVivoxLogin();
+            //Vivox Disabled intentionally for now!!!!!!!!!!!!!!!!!!!!!!!!
+            //StartVivoxLogin();
         }
 
         async Task InitializeServices()
@@ -379,7 +380,8 @@ namespace LobbyRelaySample
             await LobbyManager.BindLocalLobbyToRemote(m_LocalLobby.LobbyID.Value, m_LocalLobby);
             m_LocalLobby.LocalLobbyState.onChanged += OnLobbyStateChanged;
             SetLobbyView();
-            StartVivoxJoin();
+            //Vivox Disabled intentionally for now!!!!!!!!!!!!!!!!!!!!!!!!
+            //StartVivoxJoin();
         }
 
         public void LeaveLobby()
